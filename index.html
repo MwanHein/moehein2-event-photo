@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050505">
+<meta name="description" content="Moe Hein 2 Event Photo Gallery">
+<title>Moe Hein 2 — Event Gallery</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#050505;--panel:#0d0d0d;--panel2:#151515;--text:#f7f7f7;--muted:#9a9a9a;--line:#292929;--accent:#fff;--danger:#ff6262}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+button,input{font:inherit}button{cursor:pointer}.top{position:sticky;top:0;z-index:20;background:rgba(5,5,5,.86);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.nav{max-width:1250px;margin:auto;padding:12px 18px;display:flex;align-items:center;gap:14px}.brand{display:flex;align-items:center;gap:12px;min-width:0}.brand img{width:130px;height:42px;object-fit:contain;border-radius:4px}.brand small{color:var(--muted);white-space:nowrap}.spacer{flex:1}.icon{border:1px solid var(--line);background:#101010;color:#fff;border-radius:12px;padding:10px 12px}.hero{max-width:1250px;margin:auto;padding:44px 18px 20px;display:grid;grid-template-columns:1.4fr .6fr;gap:20px}.hero h1{font-family:Georgia,serif;font-size:clamp(38px,7vw,78px);line-height:.96;margin:0 0 14px;letter-spacing:-2px}.eyebrow{text-transform:uppercase;letter-spacing:3px;color:#aaa;font-size:12px}.sub{color:#aaa;max-width:650px;line-height:1.7}.event-card{border:1px solid var(--line);background:linear-gradient(145deg,#111,#080808);border-radius:22px;padding:22px;display:flex;flex-direction:column;justify-content:flex-end;min-height:220px}.event-card strong{font-size:20px}.event-card span{color:#999;margin-top:7px}.tools{max-width:1250px;margin:auto;padding:10px 18px 22px;display:flex;gap:10px;flex-wrap:wrap}.search{flex:1;min-width:220px;background:#101010;border:1px solid var(--line);color:#fff;padding:13px 15px;border-radius:13px;outline:none}.filter{background:#101010;border:1px solid var(--line);color:#fff;padding:12px 14px;border-radius:13px}.grid{max-width:1250px;margin:auto;padding:0 18px 90px;columns:4 220px;column-gap:12px}.tile{break-inside:avoid;margin:0 0 12px;position:relative;border-radius:15px;overflow:hidden;background:#111;border:1px solid #1e1e1e}.tile img{display:block;width:100%;height:auto;transition:transform .45s ease}.tile:hover img{transform:scale(1.025)}.tile .meta{position:absolute;left:9px;right:9px;bottom:9px;display:flex;gap:7px;justify-content:space-between;opacity:0;transition:.2s}.tile:hover .meta{opacity:1}.pill{background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:999px;padding:7px 10px;font-size:12px;backdrop-filter:blur(10px)}.empty{max-width:1250px;margin:40px auto;padding:40px 18px;text-align:center;color:#888}.modal{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:50;display:none;align-items:center;justify-content:center}.modal.open{display:flex}.viewer{width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative}.viewer img{max-width:94vw;max-height:86vh;object-fit:contain}.close,.prev,.next{position:absolute;background:rgba(20,20,20,.82);border:1px solid #333;color:#fff;border-radius:50%;width:44px;height:44px;font-size:22px}.close{top:20px;right:20px}.prev{left:20px}.next{right:20px}.actions{position:absolute;bottom:20px;display:flex;gap:8px}.action{border:1px solid #333;background:#111;color:#fff;border-radius:999px;padding:11px 16px}.admin{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(12px);z-index:60;display:none;align-items:center;justify-content:center;padding:18px}.admin.open{display:flex}.panel{width:min(720px,100%);max-height:90vh;overflow:auto;background:#0c0c0c;border:1px solid #2b2b2b;border-radius:22px;padding:22px}.panel h2{font-family:Georgia,serif;font-size:32px;margin:0 0 18px}.row{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0}.field{flex:1;min-width:180px;background:#111;border:1px solid #2c2c2c;color:#fff;border-radius:11px;padding:12px}.primary{background:#fff;color:#000;border:0;border-radius:11px;padding:12px 16px;font-weight:700}.ghost{background:#151515;color:#fff;border:1px solid #333;border-radius:11px;padding:12px 16px}.drop{border:1px dashed #444;border-radius:15px;padding:24px;text-align:center;margin-top:12px;color:#aaa}.status{font-size:13px;color:#999;margin-top:8px}.qr{max-width:230px;background:#fff;padding:10px;border-radius:12px;margin-top:10px}.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:100;background:#fff;color:#000;padding:11px 16px;border-radius:999px;font-weight:600;display:none}.toast.show{display:block}.hidden{display:none!important}
+@media(max-width:760px){.hero{grid-template-columns:1fr;padding-top:30px}.brand small{display:none}.grid{columns:2 150px}.hero h1{font-size:48px}.prev{left:8px}.next{right:8px}.viewer img{max-width:96vw;max-height:78vh}}
+</style>
+</head>
+<body>
+<header class="top"><div class="nav">
+  <div class="brand"><img src="logo.png" alt="Moe Hein 2"><small>EVENT PHOTO</small></div>
+  <div class="spacer"></div>
+  <button class="icon" onclick="openAdmin()">Admin</button>
+</div></header>
+
+<main>
+<section class="hero">
+  <div><div class="eyebrow">Moe Hein 2 · NamSang</div><h1 id="title">Event Gallery</h1><p class="sub" id="desc">Tap any photo to view, favorite, share or save. New photos can appear automatically while the photographer uploads.</p></div>
+  <div class="event-card"><strong id="eventName">Loading event…</strong><span id="count">— photos</span><span id="live">● Live gallery</span></div>
+</section>
+<div class="tools">
+  <input id="search" class="search" placeholder="Search photo ID / filename…" oninput="render()">
+  <select id="category" class="filter" onchange="render()"><option value="">All photos</option></select>
+  <button class="icon" onclick="shareEvent()">Share</button>
+  <button class="icon" onclick="showQR()">QR</button>
+</div>
+<div id="grid" class="grid"></div>
+<div id="empty" class="empty hidden">No photos found.</div>
+</main>
+
+<div id="modal" class="modal">
+ <div class="viewer">
+  <button class="close" onclick="closeViewer()">×</button>
+  <button class="prev" onclick="move(-1)">‹</button><img id="viewerImg" alt="">
+  <button class="next" onclick="move(1)">›</button>
+  <div class="actions"><button class="action" onclick="downloadCurrent()">Save</button><button class="action" onclick="shareCurrent()">Share</button><button class="action" onclick="toggleFavorite()">♡ Favorite</button></div>
+ </div>
+</div>
+
+<div id="admin" class="admin">
+ <div class="panel">
+  <div style="display:flex;justify-content:space-between;gap:10px"><h2>Studio Admin</h2><button class="ghost" onclick="closeAdmin()">Close</button></div>
+  <div id="loginBox"><p class="status">Sign in with the Supabase Auth user created for the studio.</p><div class="row"><input id="email" class="field" placeholder="Email"><input id="password" class="field" type="password" placeholder="Password"></div><button class="primary" onclick="login()">Sign in</button></div>
+  <div id="adminBox" class="hidden">
+   <div class="row"><input id="newName" class="field" placeholder="New event name"><input id="newDate" class="field" type="date"></div>
+   <div class="row"><input id="newDesc" class="field" placeholder="Event description"><button class="primary" onclick="createEvent()">Create Event</button></div>
+   <hr style="border-color:#222">
+   <h3>Upload to current event</h3>
+   <div class="drop"><input id="files" type="file" accept="image/*" multiple onchange="uploadFiles(this.files)"><div class="status" id="uploadStatus">Choose multiple photos. Uploads are stored in Supabase Storage.</div></div>
+   <h3>Event QR</h3><button class="ghost" onclick="showQR()">Show QR for this event</button><div id="qrBox"></div>
+   <div class="row"><button class="ghost" onclick="logout()">Sign out</button></div>
+  </div>
+ </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="config.js"></script>
+<script>
+const CONFIG=Object.assign({
+ SUPABASE_URL:"",
+ SUPABASE_ANON_KEY:"",
+ DEFAULT_EVENT_ID:""
+}, window.SUPABASE_CONFIG || {});
+const params=new URLSearchParams(location.search);
+let EVENT_ID=params.get("event")||CONFIG.DEFAULT_EVENT_ID;
+let sb=null, photos=[], current=0, session=null;
+const $=id=>document.getElementById(id);
+const configured=CONFIG.SUPABASE_URL.startsWith("http")&&!CONFIG.SUPABASE_ANON_KEY.startsWith("YOUR_");
+if(configured) sb=supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY);
+
+const demo=[
+ {id:"DEMO-001",category:"Wedding",url:"https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85",name:"wedding-01.jpg"},
+ {id:"DEMO-002",category:"Portrait",url:"https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=85",name:"portrait-02.jpg"},
+ {id:"DEMO-003",category:"Wedding",url:"https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=1200&q=85",name:"wedding-03.jpg"},
+ {id:"DEMO-004",category:"Event",url:"https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=85",name:"event-04.jpg"}
+];
+
+function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),1800)}
+async function load(){
+ if(!sb){photos=demo;$("eventName").textContent="Demo Event";$("count").textContent=photos.length+" photos";render();return}
+ const {data:e,error:ee}=await sb.from("events").select("*").eq("id",EVENT_ID).single();
+ if(ee){toast("Event not found");return}
+ $("eventName").textContent=e.name||"Event Gallery";$("desc").textContent=e.description||"Moe Hein 2 Event Gallery";
+ const {data:p,error}=await sb.from("photos").select("*").eq("event_id",EVENT_ID).order("created_at",{ascending:false});
+ if(error){toast(error.message);return}
+ photos=p||[];$("count").textContent=photos.length+" photos";buildCategories();render();setupRealtime();
+}
+function buildCategories(){const c=$("category");const cats=[...new Set(photos.map(x=>x.category||"General"))].sort();c.innerHTML='<option value="">All photos</option>'+cats.map(x=>`<option>${esc(x)}</option>`).join("")}
+function render(){
+ const q=$("search").value.toLowerCase().trim(),cat=$("category").value;
+ const list=photos.filter(p=>(!cat||(p.category||"General")===cat)&&(!q||String(p.photo_id||p.id||"").toLowerCase().includes(q)||String(p.filename||p.name||"").toLowerCase().includes(q)));
+ $("grid").innerHTML=list.map((p,i)=>`<article class="tile" onclick="openViewerById('${escAttr(p.id)}')"><img loading="lazy" src="${escAttr(p.public_url||p.url)}" alt="${escAttr(p.filename||p.name||"Event photo")}"><div class="meta"><span class="pill">${esc(p.photo_id||p.id||"PHOTO")}</span><span class="pill">${esc(p.category||"General")}</span></div></article>`).join("");
+ $("empty").classList.toggle("hidden",list.length>0);$("count").textContent=photos.length+" photos";
+}
+function openViewerById(id){const idx=photos.findIndex(p=>String(p.id)===String(id));if(idx<0)return;current=idx;updateViewer();$("modal").classList.add("open")}
+function updateViewer(){const p=photos[current];$("viewerImg").src=p.public_url||p.url;$("viewerImg").alt=p.filename||p.name||"Event photo"}
+function closeViewer(){$("modal").classList.remove("open")}
+function move(n){if(!photos.length)return;current=(current+n+photos.length)%photos.length;updateViewer()}
+async function downloadCurrent(){const u=photos[current].public_url||photos[current].url;const a=document.createElement("a");a.href=u;a.target="_blank";a.download=photos[current].filename||"photo.jpg";a.click()}
+async function shareCurrent(){const u=photos[current].public_url||photos[current].url;if(navigator.share)await navigator.share({title:"Moe Hein 2 Event Photo",url:u});else{await navigator.clipboard.writeText(u);toast("Photo link copied")}}
+function toggleFavorite(){const p=photos[current], key="mh2fav:"+EVENT_ID, arr=JSON.parse(localStorage.getItem(key)||"[]");const id=p.id;if(arr.includes(id)){localStorage.setItem(key,JSON.stringify(arr.filter(x=>x!==id)));toast("Removed from favorites")}else{arr.push(id);localStorage.setItem(key,JSON.stringify(arr));toast("Added to favorites")}}
+async function shareEvent(){const u=location.href;if(navigator.share)await navigator.share({title:$("eventName").textContent,url:u});else{await navigator.clipboard.writeText(u);toast("Event link copied")}}
+function showQR(){const u=location.href;const box=$("qrBox");box.innerHTML=`<img class="qr" alt="QR" src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(u)}"><div class="status">${esc(u)}</div>`;$("admin").classList.add("open")}
+function openAdmin(){$("admin").classList.add("open");if(session)showAdmin()}
+function closeAdmin(){$("admin").classList.remove("open")}
+function showAdmin(){$("loginBox").classList.add("hidden");$("adminBox").classList.remove("hidden")}
+async function login(){if(!sb){toast("Configure Supabase first");return}const {data,error}=await sb.auth.signInWithPassword({email:$("email").value,password:$("password").value});if(error){toast(error.message);return}session=data.session;showAdmin();toast("Signed in")}
+async function logout(){if(sb)await sb.auth.signOut();session=null;$("adminBox").classList.add("hidden");$("loginBox").classList.remove("hidden")}
+async function uploadFiles(list){
+ if(!sb||!session){toast("Sign in first");return}
+ let done=0;
+ for(const file of [...list]){
+   const id=crypto.randomUUID(), ext=(file.name.split(".").pop()||"jpg").toLowerCase(), path=`${EVENT_ID}/${id}.${ext}`;
+   $("uploadStatus").textContent=`Uploading ${done+1}/${list.length}: ${file.name}`;
+   const {error:up}=await sb.storage.from("event-photos").upload(path,file,{upsert:false,contentType:file.type});
+   if(up){toast(up.message);continue}
+   const {data:pub}=sb.storage.from("event-photos").getPublicUrl(path);
+   const {error:ins}=await sb.from("photos").insert({id,event_id:EVENT_ID,photo_id:id.slice(0,8).toUpperCase(),filename:file.name,category:"General",storage_path:path,public_url:pub.publicUrl});
+   if(ins)toast(ins.message);done++;
+ }
+ $("uploadStatus").textContent=`Uploaded ${done}/${list.length}.`;load()
+}
+async function createEvent(){
+ if(!sb||!session){toast("Sign in first");return}
+ const name=$("newName").value.trim()||"New Event";
+ const {data,error}=await sb.from("events").insert({name,description:$("newDesc").value.trim(),event_date:$("newDate").value||null}).select().single();
+ if(error){toast(error.message);return}
+ const u=location.origin+location.pathname+"?event="+data.id;
+ await navigator.clipboard?.writeText(u);toast("Event created — link copied");EVENT_ID=data.id;history.replaceState({},'',u);load()
+}
+function setupRealtime(){
+ if(!sb)return;
+ sb.channel("event-"+EVENT_ID).on("postgres_changes",{event:"*",schema:"public",table:"photos",filter:"event_id=eq."+EVENT_ID},payload=>{
+   if(payload.eventType==="INSERT")photos=[payload.new,...photos];
+   if(payload.eventType==="DELETE")photos=photos.filter(x=>x.id!==payload.old.id);
+   buildCategories();render();toast("New photo added");
+ }).subscribe();
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function escAttr(s){return esc(s)}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeViewer();if($("modal").classList.contains("open")){if(e.key==="ArrowLeft")move(-1);if(e.key==="ArrowRight")move(1)}})
+load();
+</script>
+</body>
+</html>
