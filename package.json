@@ -1,7 +1,0 @@
-{
-  "name": "moehein2-event-photo",
-  "private": true,
-  "scripts": {
-    "build": "node build.js"
-  }
-}
