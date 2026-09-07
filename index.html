@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#121110">
+<meta name="description" content="Moe Hein 2 Event Photo Gallery">
+<title>Moe Hein 2 — Event Gallery</title>
+<script>
+(function(){
+  try{
+    var stored=localStorage.getItem('moehein2_theme')||'auto';
+    var eff=stored;
+    if(stored==='auto'){eff=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'}
+    document.documentElement.setAttribute('data-theme',eff);
+  }catch(e){}
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<style>
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/playfair-display-latin-500-normal.woff2') format('woff2')}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/playfair-display-latin-600-normal.woff2') format('woff2')}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/playfair-display-latin-700-normal.woff2') format('woff2')}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:500;font-display:swap;src:url('fonts/playfair-display-latin-500-italic.woff2') format('woff2')}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:600;font-display:swap;src:url('fonts/playfair-display-latin-600-italic.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/inter-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/inter-latin-500-normal.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/inter-latin-600-normal.woff2') format('woff2')}
+@font-face{font-family:'Noto Sans Myanmar';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/noto-sans-myanmar-myanmar-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Noto Sans Myanmar';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/noto-sans-myanmar-myanmar-500-normal.woff2') format('woff2')}
+@font-face{font-family:'Noto Sans Myanmar';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/noto-sans-myanmar-myanmar-600-normal.woff2') format('woff2')}
+@font-face{font-family:'Noto Sans Myanmar';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/noto-sans-myanmar-myanmar-700-normal.woff2') format('woff2')}
+:root{
+  --bg:#0c0b0a;
+  --bg-soft:#131110;
+  --panel:#161412;
+  --paper:#f6f1e6;
+  --paper-dim:#d8cfbd;
+  --muted:#8f8575;
+  --line:rgba(246,241,230,.09);
+  --line2:rgba(246,241,230,.20);
+  --champagne:#c2a06a;
+  --champagne-soft:#e2c98f;
+  --danger:#b0503d;
+  --glass:rgba(12,11,10,.86);
+  --glass2:rgba(22,20,18,.72);
+  --sans:'Inter','Noto Sans Myanmar',system-ui,sans-serif;
+  --serif:'Playfair Display','Noto Sans Myanmar',Georgia,serif;
+  --r-sm:10px;
+  --r-md:16px;
+  --r-lg:22px;
+  --r-pill:999px;
+  color-scheme:dark;
+}
+html[data-theme="light"]{
+  --bg:#f8f3e8;
+  --bg-soft:#f0e9d8;
+  --panel:#ffffff;
+  --paper:#221d15;
+  --paper-dim:#4c4232;
+  --muted:#867a63;
+  --line:rgba(34,29,21,.10);
+  --line2:rgba(34,29,21,.22);
+  --champagne:#92702f;
+  --champagne-soft:#785c26;
+  --danger:#a8402c;
+  --glass:rgba(248,243,232,.86);
+  --glass2:rgba(255,255,255,.68);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--paper);font-family:var(--sans)}
+html{transition:background .25s ease}
+body{background-image:radial-gradient(ellipse 900px 500px at 15% -10%,rgba(194,160,106,.08),transparent 60%);transition:background-color .25s ease,color .25s ease}
+button,input,select{font:inherit}
+button{cursor:pointer}
+::selection{background:var(--champagne);color:var(--bg)}
+:focus-visible{outline:1px solid var(--champagne);outline-offset:2px}
+
+/* ---------- top nav ---------- */
+.top{position:sticky;top:0;z-index:20;background:var(--glass);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.nav{max-width:1250px;margin:auto;padding:16px 20px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand img{width:150px;height:auto;display:block}
+.brand img.logo-light{display:none}
+html[data-theme="light"] .brand img.logo-dark{display:none}
+html[data-theme="light"] .brand img.logo-light{display:block}
+.brand small{color:var(--muted);white-space:nowrap;font-size:10.5px;letter-spacing:.16em;font-weight:500}
+.spacer{flex:1}
+.live-pill{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-style:italic;font-family:var(--serif)}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--champagne);position:relative}
+.dot::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:1px solid var(--champagne);opacity:0;animation:pulse 2.6s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.5);opacity:.6}100%{transform:scale(2.4);opacity:0}}
+.icon{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);background:transparent;color:var(--paper-dim);border-radius:var(--r-pill);padding:9px 15px;font-size:12.5px;letter-spacing:.02em;transition:border-color .2s,color .2s}
+.icon svg{width:15px;height:15px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.icon:hover{border-color:var(--champagne);color:var(--champagne-soft)}
+
+
+/* ---------- hero ---------- */
+.hero{max-width:1250px;margin:auto;padding:56px 20px 26px;display:grid;grid-template-columns:1.4fr .6fr;gap:28px;align-items:start}
+.eyebrow{color:var(--champagne);font-size:12.5px;letter-spacing:.03em;margin-bottom:10px;font-style:italic;font-family:var(--serif)}
+.hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(38px,6.4vw,64px);line-height:1.04;margin:0 0 16px;letter-spacing:-.01em}
+.sub{color:var(--muted);max-width:600px;line-height:1.75;font-size:14.5px}
+
+.event-card{position:relative;overflow:hidden;border:1px solid var(--line2);border-radius:var(--r-lg);background:linear-gradient(165deg,var(--panel),var(--bg-soft));padding:16px 20px;display:flex;flex-direction:column;gap:7px}
+.event-card::before{content:'';position:absolute;inset:6px;border:1px solid var(--line);border-radius:calc(var(--r-lg) - 6px);pointer-events:none}
+.event-card::after{content:'';position:absolute;top:6px;left:6px;width:14px;height:14px;border-top:1px solid var(--champagne);border-left:1px solid var(--champagne);opacity:.7}
+
+.datetime-weather{display:flex;flex-direction:column;align-items:flex-start;gap:5px;position:relative}
+.greeting{font-family:'Noto Sans Myanmar',var(--serif);font-size:clamp(17px,1.8vw,20px);line-height:1.3;color:var(--paper);font-weight:600}
+.ec-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:var(--muted);font-family:'Noto Sans Myanmar',var(--sans);font-size:12px}
+.ec-dot{color:var(--muted);opacity:.55}
+.date-line,.time-line{color:var(--paper-dim)}
+.location-line{display:inline-flex;align-items:center;gap:4px}
+.location-name{color:var(--paper-dim);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.pin{font-size:13px;color:var(--champagne);line-height:1}
+.weather-icon{font-size:14px;line-height:1}
+.weather-temp{font-family:var(--sans);color:var(--paper-dim);font-weight:600;font-size:12px}
+.weather-desc{color:var(--muted)}
+.event-summary{margin-top:2px;display:inline-flex;align-items:center;gap:5px;align-self:flex-start;border:1px solid var(--line2);border-radius:var(--r-pill);padding:5px 13px;font-size:11.5px}
+.event-summary strong{font-family:'Noto Sans Myanmar',var(--serif);font-weight:600;color:var(--champagne-soft);font-size:12px}
+.event-summary span{color:var(--muted)}
+@media(max-width:760px){.location-name{max-width:90px}}
+
+/* ---------- tools / search ---------- */
+.tools{max-width:1250px;margin:auto;padding:12px 20px 22px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.field-wrap{position:relative;display:flex;align-items:center}
+.field-wrap.search-wrap{flex:1;min-width:200px}
+.field-icon{position:absolute;left:14px;width:15px;height:15px;color:var(--champagne);pointer-events:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.search{width:100%;background:transparent;border:1px solid var(--line2);border-radius:var(--r-pill);color:var(--paper);padding:12px 15px 12px 40px;outline:none;font-size:13.5px;transition:border-color .2s}
+.search:focus{border-color:var(--champagne)}
+.search::placeholder{color:var(--muted)}
+.filter{background:transparent;border:1px solid var(--line2);border-radius:var(--r-pill);color:var(--paper-dim);padding:12px 34px 12px 40px;font-size:12.5px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c2a06a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:13px;transition:border-color .2s}
+.filter:focus{border-color:var(--champagne);outline:none}
+
+/* film-strip sprocket divider — nods to the studio's negatives */
+.sprockets{max-width:1250px;margin:0 auto;height:13px;background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line);background-image:radial-gradient(circle,var(--bg) 2.1px,transparent 2.2px);background-size:22px 13px;background-position:11px 6.5px}
+
+/* ---------- gallery grid ---------- */
+.grid{max-width:1250px;margin:auto;padding:20px 20px 10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;background:transparent}
+.tile{position:relative;overflow:hidden;background:var(--bg-soft);border:1px solid var(--line);border-radius:var(--r-md);aspect-ratio:3/4}
+.tile img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .5s cubic-bezier(.2,.7,.3,1),filter .5s}
+.tile:hover img{transform:scale(1.045)}
+.tile::after{content:'';position:absolute;inset:0;box-shadow:inset 0 0 0 0 var(--champagne);transition:box-shadow .25s;pointer-events:none}
+.tile:hover::after{box-shadow:inset 0 0 0 1px rgba(194,160,106,.55)}
+.tile .meta{position:absolute;right:8px;top:8px;display:flex;gap:6px;opacity:0;transition:opacity .25s}
+.tile:hover .meta{opacity:1}
+.pill{background:rgba(12,11,10,.78);border:1px solid var(--line2);border-radius:var(--r-pill);color:var(--paper-dim);padding:5px 10px;font-size:10.5px;backdrop-filter:blur(8px)}
+
+/* ---------- load more ---------- */
+.load-more-wrap{max-width:1250px;margin:0 auto;padding:8px 20px 56px;display:flex;flex-direction:column;align-items:center;gap:11px}
+.load-more-btn{border:1px solid var(--line2);border-radius:var(--r-pill);background:transparent;color:var(--paper-dim);padding:13px 38px;font-size:12.5px;letter-spacing:.05em;transition:border-color .2s,color .2s,background .2s}
+.load-more-btn:hover{border-color:var(--champagne);color:var(--champagne-soft)}
+.load-more-count{color:var(--muted);font-size:11px;letter-spacing:.03em;font-variant-numeric:tabular-nums}
+
+/* ---------- site footer ---------- */
+.site-footer{max-width:1250px;margin:0 auto;padding:20px 20px 34px;text-align:center;color:var(--muted);font-size:11px;letter-spacing:.05em;border-top:1px solid var(--line)}
+
+.matched-banner{max-width:1250px;margin:auto;padding:13px 20px;display:flex;align-items:center;justify-content:space-between;background:var(--panel);border-bottom:1px solid var(--line);font-size:13px}
+.matched-banner span{color:var(--muted)}
+.matched-banner b{color:var(--champagne-soft);font-weight:500}
+.matched-banner button{color:var(--champagne);background:none;border:0;font-size:13px}
+.empty{max-width:1250px;margin:0 auto;padding:70px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;font-family:var(--serif);font-size:21px;color:var(--paper);margin-bottom:9px;font-weight:500}
+
+/* ---------- lightbox viewer ---------- */
+.modal{position:fixed;inset:0;background:rgba(8,7,6,.97);z-index:50;display:none;align-items:center;justify-content:center}
+.modal.open{display:flex}
+.viewer{width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative}
+.viewer img{max-width:92vw;max-height:82vh;object-fit:contain;border:1px solid var(--line2);border-radius:var(--r-md);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.close,.prev,.next{position:absolute;background:rgba(12,11,10,.5);border:1px solid var(--line2);color:var(--paper);border-radius:50%;width:42px;height:42px;font-size:19px;transition:border-color .2s,color .2s}
+.close:hover,.prev:hover,.next:hover{border-color:var(--champagne);color:var(--champagne-soft)}
+.close{top:20px;right:20px}
+.prev{left:20px}
+.next{right:20px}
+.actions{position:absolute;bottom:0;display:flex;width:100%;border-top:1px solid var(--line);background:rgba(8,7,6,.7);backdrop-filter:blur(10px)}
+.action{flex:1;border:0;border-right:1px solid var(--line);background:transparent;color:var(--muted);padding:17px 0;font-size:12.5px;letter-spacing:.02em;transition:color .2s}
+.action:last-child{border-right:0}
+.action:hover{color:var(--champagne-soft)}
+
+/* ---------- admin & face modals ---------- */
+.admin,.face-modal{position:fixed;inset:0;background:rgba(8,7,6,.86);backdrop-filter:blur(12px);z-index:60;display:none;align-items:center;justify-content:center;padding:20px}
+.admin.open,.face-modal.open{display:flex}
+.panel{width:min(680px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-lg);padding:26px;box-shadow:0 40px 100px rgba(0,0,0,.5)}
+.panel h2{font-family:var(--serif);font-weight:600;font-size:26px;margin:0 0 7px}
+.panel p.status{color:var(--muted);font-size:13px;margin:0 0 18px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin:11px 0}
+.field{flex:1;min-width:170px;background:transparent;border:1px solid var(--line2);border-radius:var(--r-sm);color:var(--paper);padding:11px 13px;transition:border-color .2s}
+.field:focus{border-color:var(--champagne);outline:none}
+.primary{background:var(--champagne);color:#141210;border:0;border-radius:var(--r-pill);padding:11px 20px;font-weight:600;font-size:13.5px;letter-spacing:.02em;transition:background .2s}
+.primary:hover{background:var(--champagne-soft)}
+.ghost{background:transparent;color:var(--paper-dim);border:1px solid var(--line2);border-radius:var(--r-pill);padding:11px 20px;font-size:13.5px;transition:border-color .2s,color .2s}
+.ghost:hover{border-color:var(--champagne);color:var(--champagne-soft)}
+.drop{border:1px dashed var(--line2);border-radius:var(--r-md);padding:24px;text-align:center;margin-top:13px;color:var(--muted);font-size:13px}
+.status{font-size:13px;color:var(--muted);margin-top:9px}
+.privacy-setting{border:1px solid var(--line2);border-radius:var(--r-md);padding:16px;margin:15px 0;background:rgba(0,0,0,.15)}
+.privacy-setting-title{font-family:var(--serif);font-size:16px;margin-bottom:6px;color:var(--paper)}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.switch{position:relative;width:50px;height:27px;flex:0 0 auto}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#3a352c;border:1px solid var(--line2);border-radius:999px;transition:.2s}
+.slider:before{content:"";position:absolute;width:19px;height:19px;left:3px;top:3px;border-radius:50%;background:var(--paper);transition:.2s}
+.switch input:checked+.slider{background:var(--champagne)}
+.switch input:checked+.slider:before{transform:translateX(23px);background:#141210}
+.privacy-badge{display:inline-block;margin-top:9px;border:1px solid var(--line2);border-radius:var(--r-pill);padding:5px 10px;font-size:10.5px;color:var(--muted)}
+.qr{max-width:220px;background:var(--paper);border-radius:var(--r-md);padding:11px;margin-top:11px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:100;background:var(--paper);color:var(--bg);border-radius:var(--r-pill);padding:12px 20px;font-weight:600;font-size:13px;display:none;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.toast.show{display:block}
+.hidden{display:none!important}
+
+/* ---------- face scan ---------- */
+.face-modal .panel{width:min(400px,100%);text-align:center}
+.viewfinder{position:relative;width:200px;height:200px;border-radius:50%;overflow:hidden;margin:0 auto 24px;background:var(--bg);border:1px solid var(--line2)}
+.viewfinder img,.viewfinder video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.viewfinder .ring{position:absolute;inset:6px;border-radius:50%;border:1px dashed var(--line2)}
+.scanning .ring{border-color:var(--champagne);animation:ring 1.6s ease-in-out infinite}
+@keyframes ring{0%,100%{opacity:.4}50%{opacity:1}}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:var(--champagne);opacity:0;box-shadow:0 0 10px var(--champagne)}
+.scanning .scan-line{opacity:.9;animation:move 1.6s linear infinite}
+@keyframes move{0%{top:8%}50%{top:92%}100%{top:8%}}
+.scan-status{font-size:13px;color:var(--champagne-soft);min-height:18px;margin-bottom:7px}
+.scan-step{display:none}
+.scan-step.active{display:block}
+.consent-note{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:15px;margin-top:17px;text-align:left}
+.cam-error{font-size:12px;color:var(--danger);margin-bottom:15px;display:none}
+
+@media(max-width:760px){
+  .hero{grid-template-columns:1fr;padding-top:30px}
+  .brand small{display:none}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:7px;padding:14px 14px 6px}
+  .load-more-wrap{padding:6px 14px 40px}
+  .hero h1{font-size:42px}
+  .prev{left:9px}
+  .next{right:9px}
+  .viewer img{max-width:96vw;max-height:76vh}
+}
+
+/* ---------- language switcher ---------- */
+.dropdown{position:relative}
+.dropdown-trigger{display:flex;align-items:center;gap:7px;border:1px solid var(--line2);background:var(--glass2);padding:8px 9px 8px 12px;border-radius:999px;backdrop-filter:blur(10px);color:var(--paper);font-weight:700;font-size:12px;letter-spacing:.01em;cursor:pointer;transition:border-color .2s,color .2s;white-space:nowrap}
+.dropdown-trigger:hover,.dropdown.open .dropdown-trigger{border-color:var(--champagne);color:var(--champagne-soft)}
+.dropdown-trigger .dd-icon{font-size:14px;line-height:1;display:flex}
+.dropdown-trigger .chevron{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s;flex:0 0 auto}
+.dropdown.open .chevron{transform:rotate(180deg)}
+.dropdown-menu{position:absolute;top:calc(100% + 9px);right:0;min-width:190px;background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:7px;display:none;flex-direction:column;gap:1px;box-shadow:0 16px 44px rgba(0,0,0,.38);z-index:60}
+.dropdown.open .dropdown-menu{display:flex}
+.dropdown-item{display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:11px;color:var(--paper);font-weight:700;font-size:13px;background:transparent;border:0;cursor:pointer;text-align:left;width:100%;transition:background .15s}
+.dropdown-item .dd-icon{font-size:15px;line-height:1;width:19px;text-align:center;flex:0 0 auto}
+.dropdown-item:hover{background:var(--line)}
+.dropdown-item.active{background:var(--champagne);color:#141210}
+@media(max-width:760px){.dropdown-trigger{padding:7px 8px 7px 10px;font-size:11.5px}.dropdown-menu{right:auto;left:0}}
+@media(max-width:400px){.nav{gap:6px}.dropdown-trigger{padding:6px 6px 6px 8px;font-size:10.5px;gap:5px}.dropdown-trigger .dd-icon{font-size:12px}}
+.lang-badge{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;color:#fff;line-height:1}
+html.lang-my body,html.lang-shn body{font-family:'Noto Sans Myanmar','Inter',system-ui,sans-serif}
+html.lang-my .hero h1,html.lang-my .event-card strong,html.lang-my .panel h2,html.lang-my .panel h3,
+html.lang-shn .hero h1,html.lang-shn .event-card strong,html.lang-shn .panel h2,html.lang-shn .panel h3{font-family:'Noto Sans Myanmar','Playfair Display',Georgia,serif}
+html.lang-zh body{font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC','Inter',system-ui,sans-serif}
+@media(max-width:760px){.nav{gap:9px}.brand img{width:96px}.live-pill{display:none}}
+@media(max-width:400px){.nav{padding:14px 12px}.brand img{width:78px}.brand small{display:none}.admin-avatar{width:33px;height:33px}}
+
+/* ---------- theme switcher ---------- */
+/* ---------- admin avatar button ---------- */
+.admin-avatar{display:flex;align-items:center;justify-content:center;width:40px;height:40px;flex:0 0 auto;border-radius:50%;border:1px solid var(--line2);background:transparent;color:var(--paper-dim);transition:border-color .2s,color .2s,background .2s}
+.admin-avatar svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.admin-avatar:hover,.admin-avatar:focus-visible{border-color:var(--champagne);color:var(--champagne-soft);background:rgba(194,160,106,.1)}
+@media(max-width:760px){.admin-avatar{width:36px;height:36px}.admin-avatar svg{width:16px;height:16px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="nav">
+  <div class="brand"><img class="logo-dark" src="logo-title-transparent.png" alt="Moe Hein 2"><img class="logo-light" src="logo-title-dark.png" alt="Moe Hein 2"><small>EVENT PHOTO</small></div>
+  <div class="spacer"></div>
+  <div class="live-pill"><span class="dot"></span><span id="live" data-i18n="liveGallery">Live gallery</span></div>
+  <div class="dropdown" id="themeDropdown">
+    <button class="dropdown-trigger" type="button" onclick="toggleDropdown('themeDropdown')" aria-haspopup="true" aria-label="Theme switcher">
+      <span class="dd-icon" id="themeTriggerIcon"></span><span id="themeTriggerLabel">Dark</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="dropdown-menu" role="menu">
+      <button class="dropdown-item" id="themeLight" type="button" onclick="setTheme('light')">
+        <span class="dd-icon">☀️</span><span data-i18n="themeLight">Light</span>
+      </button>
+      <button class="dropdown-item" id="themeDark" type="button" onclick="setTheme('dark')">
+        <span class="dd-icon">🌙</span><span data-i18n="themeDark">Dark</span>
+      </button>
+      <button class="dropdown-item" id="themeAuto" type="button" onclick="setTheme('auto')">
+        <span class="dd-icon">🖥️</span><span data-i18n="themeAuto">Auto</span>
+      </button>
+    </div>
+  </div>
+  <div class="dropdown" id="langDropdown">
+    <button class="dropdown-trigger" type="button" onclick="toggleDropdown('langDropdown')" aria-haspopup="true" aria-label="Language selector">
+      <span class="dd-icon" id="langTriggerIcon"></span><span id="langTriggerLabel">EN</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="dropdown-menu" role="menu">
+      <button class="dropdown-item" id="langEn" type="button" onclick="setLanguage('en')">
+        <span class="dd-icon lang-badge" style="background:#3b6fd1">EN</span>English
+      </button>
+      <button class="dropdown-item" id="langMy" type="button" onclick="setLanguage('my')">
+        <span class="dd-icon lang-badge" style="background:#c2a06a;color:#141210">မ</span>မြန်မာ
+      </button>
+      <button class="dropdown-item" id="langZh" type="button" onclick="setLanguage('zh')">
+        <span class="dd-icon lang-badge" style="background:#d1483b">中</span>中文
+      </button>
+      <button class="dropdown-item" id="langShn" type="button" onclick="setLanguage('shn')">
+        <span class="dd-icon lang-badge" style="background:#7b5bd6">တ</span>တႆး
+      </button>
+    </div>
+  </div>
+  <button class="admin-avatar" onclick="openAdmin()" aria-label="Admin" title="Admin">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.3" r="3.5"/><path d="M4.8 19.2c1.15-3.5 3.95-5.3 7.2-5.3s6.05 1.8 7.2 5.3"/></svg>
+  </button>
+</div></header>
+
+<main>
+<section class="hero">
+  <div><div class="eyebrow">Moe Hein 2 Studio</div><h1 id="title" data-i18n="eventGallery">Event Gallery</h1><p class="sub" id="desc" data-i18n="galleryDesc">Tap any photo to view, favorite, share or save. New photos can appear automatically while the photographer uploads.</p></div>
+  <div class="event-card">
+    <div class="datetime-weather" aria-live="polite">
+      <div class="greeting" id="greeting">မင်္ဂလာပါ</div>
+      <div class="ec-meta">
+        <span id="dateLine">—</span><span class="ec-dot">·</span><span id="timeLine">—</span><span class="ec-dot">·</span><span class="location-line"><span class="pin">⌖</span><span class="location-name" id="locationLine">ရန်ကုန်</span></span>
+      </div>
+      <div class="ec-meta">
+        <span class="weather-icon" id="weatherIcon">☁️</span><span class="weather-temp" id="weatherTemp">—°C</span><span class="ec-dot">·</span><span class="weather-desc" id="weatherDesc" data-i18n="weatherLoading">ရာသီဥတု ရယူနေသည်…</span>
+      </div>
+    </div>
+    <div class="event-summary">
+      <strong id="eventName">Loading event…</strong><span>·</span><span id="count">— photos</span>
+    </div>
+  </div>
+</section>
+<div class="tools">
+  <div class="field-wrap search-wrap">
+    <svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="search" class="search public-filter" placeholder="Search photo ID / filename…" data-i18n-placeholder="searchPlaceholder" oninput="onFilterChange()">
+  </div>
+  <div class="field-wrap">
+    <svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="1.5"/><rect x="8" y="8" width="13" height="13" rx="1.5"/></svg>
+    <select id="category" class="filter public-filter" onchange="onFilterChange()"><option value="" data-i18n="allPhotos">All photos</option></select>
+  </div>
+  <button class="icon" onclick="openFaceScan()">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3"/><path d="M17 4h3a1 1 0 0 1 1 1v3"/><path d="M21 16v3a1 1 0 0 1-1 1h-3"/><path d="M7 20H4a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="11" r="2.3"/><path d="M8.5 16.2c1-1.5 2.2-2.3 3.5-2.3s2.5.8 3.5 2.3"/></svg>
+    <span data-i18n="findMyPhotos">Find my photos</span>
+  </button>
+  <button class="icon" onclick="shareEvent()">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5.5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="18.5" r="2.4"/><line x1="8.2" y1="10.7" x2="15.8" y2="6.6"/><line x1="8.2" y1="13.3" x2="15.8" y2="17.4"/></svg>
+    <span data-i18n="share">Share</span>
+  </button>
+  <button class="icon" onclick="showQR()">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M19 14h2v2h-2z"/><path d="M14 19h2v2h-2z"/><path d="M19 19h2v2h-2z"/></svg>
+    <span>QR</span>
+  </button>
+</div>
+<div id="matchedBanner" class="matched-banner hidden">
+  <span data-i18n="matchedBanner">Showing photos matched to <b>your face</b></span>
+  <button onclick="clearMatch()" data-i18n="clear">Clear</button>
+</div>
+<div id="privateNotice" class="privacy-badge hidden" style="max-width:1250px;margin:0 auto 10px 18px" data-i18n="privateGalleryNotice">🔒 Private gallery — use Find my photos to see only your matched photos.</div>
+<div class="sprockets"></div>
+<div id="grid" class="grid"></div>
+<div id="loadMoreWrap" class="load-more-wrap hidden">
+  <button id="loadMoreBtn" class="load-more-btn" onclick="loadMore()" data-i18n="loadMore">Load more</button>
+  <span id="loadMoreCount" class="load-more-count"></span>
+</div>
+<div class="sprockets"></div>
+<div id="empty" class="empty hidden"><b data-i18n="noPhotos">No photos found</b><span data-i18n="tryDifferent">Try a different search or clear your filters.</span></div>
+</main>
+<footer class="site-footer">Moe Hein 2 Photo Studio · Event Live Gallery · NamSang · Myanmar</footer>
+
+<div id="modal" class="modal">
+ <div class="viewer">
+  <button class="close" onclick="closeViewer()">×</button>
+  <button class="prev" onclick="move(-1)">‹</button><img id="viewerImg" alt="">
+  <button class="next" onclick="move(1)">›</button>
+  <div class="actions"><button class="action" onclick="downloadCurrent()" data-i18n="save">Save</button><button class="action" onclick="shareCurrent()" data-i18n="share">Share</button><button class="action" onclick="toggleFavorite()" data-i18n="favorite">♡ Favorite</button></div>
+ </div>
+</div>
+
+<div id="admin" class="admin">
+ <div class="panel">
+  <div style="display:flex;justify-content:space-between;gap:10px"><h2 data-i18n="studioAdmin">Studio Admin</h2><button class="ghost" onclick="closeAdmin()" data-i18n="close">Close</button></div>
+  <div id="loginBox"><p class="status" data-i18n="adminLoginDesc">Sign in with the Supabase Auth user created for the studio.</p><div class="row"><input id="email" class="field" placeholder="Email" data-i18n-placeholder="email"><input id="password" class="field" type="password" placeholder="Password" data-i18n-placeholder="password"></div><button class="primary" onclick="login()" data-i18n="signIn">Sign in</button></div>
+  <div id="adminBox" class="hidden">
+   <div class="row"><input id="newName" class="field" placeholder="New event name" data-i18n-placeholder="newEventName"><input id="newDate" class="field" type="date"></div>
+   <div class="row"><input id="newDesc" class="field" placeholder="Event description" data-i18n-placeholder="eventDescription"><input id="newLocation" class="field" placeholder="Location e.g. Taunggyi" data-i18n-placeholder="locationExample"></div>
+   <div class="row"><button class="primary" onclick="createEvent()" data-i18n="createEvent">Create Event</button><span class="status" id="locationStatus" data-i18n="locationHint">Location ထည့်လိုက်တာနဲ့ Location + Weather ကို အလိုအလျောက်ရှာပေးမယ်</span></div>
+   <hr style="border-color:var(--line)">
+   <h3 style="font-family:var(--serif);font-weight:500" data-i18n="currentLocation">Current event location</h3>
+   <div class="row"><input id="currentLocation" class="field" placeholder="Change current event location" data-i18n-placeholder="changeLocation"><button class="primary" onclick="updateEventLocation()" data-i18n="updateLocation">Update Location</button></div>
+   <div class="status" id="currentLocationStatus" data-i18n="currentLocationHint">Current location ကို ပြောင်းလိုက်ရင် Gallery ရဲ့ Location + Weather ချက်ချင်းပြောင်းပါမယ်။</div>
+   <div class="privacy-setting">
+    <div class="privacy-setting-title" data-i18n="galleryVisibility">Gallery photo visibility</div>
+    <div class="switch-row">
+      <div><div class="status" style="margin-top:0" data-i18n="galleryVisibilityDesc">ON = clients can see All photos. OFF = clients must use Find my photos and only matched photos are shown.</div><span id="visibilityStatus" class="privacy-badge"></span></div>
+      <label class="switch" aria-label="Gallery photo visibility"><input id="showAllPhotos" type="checkbox" onchange="updatePhotoVisibility(this.checked)"><span class="slider"></span></label>
+    </div>
+   </div>
+   <hr style="border-color:var(--line)">
+   <h3 style="font-family:var(--serif);font-weight:500" data-i18n="uploadCurrent">Upload to current event</h3>
+   <div class="drop"><input id="files" type="file" accept="image/*" multiple onchange="uploadFiles(this.files)"><div class="status" id="uploadStatus" data-i18n="uploadDesc">Choose multiple photos. Uploads are stored in Supabase Storage.</div></div>
+   <div class="row"><button class="ghost" onclick="reindexExistingPhotos()" data-i18n="indexExistingFaces">Index existing photos</button></div>
+   <h3 style="font-family:var(--serif);font-weight:500" data-i18n="eventQr">Event QR</h3><button class="ghost" onclick="showQR()" data-i18n="showQr">Show QR for this event</button><div id="qrBox"></div>
+   <div class="row"><button class="ghost" onclick="logout()" data-i18n="signOut">Sign out</button></div>
+  </div>
+ </div>
+</div>
+
+<!-- Find my photos (face scan) -->
+<div id="faceModal" class="face-modal">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between"><h2 style="font-size:20px" data-i18n="findMyPhotos">Find my photos</h2><button class="ghost" onclick="closeFaceScan()" data-i18n="close">Close</button></div>
+
+    <div class="scan-step active" id="stepConsent">
+      <p class="status" style="text-align:left" data-i18n="faceIntro">We'll scan your face just once and match it against photos from this event. Nothing is shared with other guests or the studio.</p>
+      <button class="primary" onclick="goStep('stepCapture')" data-i18n="continue">Continue</button>
+      <p class="consent-note" data-i18n="facePrivacy">Your face data is used only to filter this gallery and isn't kept after you close this screen.</p>
+    </div>
+
+    <div class="scan-step" id="stepCapture">
+      <p class="status" data-i18n="centerFace">Center your face and hold still.</p>
+      <div class="viewfinder"><video id="camVideo" autoplay playsinline muted></video><div class="ring"></div><div class="scan-line"></div></div>
+      <div class="cam-error" id="camError"></div>
+      <button class="primary" id="captureBtn" onclick="captureSelfie()" data-i18n="capture">Capture</button>
+    </div>
+
+    <div class="scan-step" id="stepScanning">
+      <div class="viewfinder"><img id="capturedImg" src="" alt=""><div class="ring"></div><div class="scan-line"></div></div>
+      <div class="scan-status" id="scanStatus" data-i18n="comparing">Comparing with photos…</div>
+      <p class="status" data-i18n="fewSeconds">This usually takes a few seconds.</p>
+    </div>
+
+    <div class="scan-step" id="stepResults">
+      <h2 id="resultsTitle" style="font-size:20px" data-i18n="foundPhotos">Found you in some photos</h2>
+      <p class="status" data-i18n="matchedDesc">These are now filtered under Matched. You can clear this anytime.</p>
+      <button class="primary" onclick="viewMatches()" data-i18n="viewMatched">View matched photos</button>
+    </div>
+  </div>
+</div>
+<canvas id="camCanvas" style="display:none"></canvas>
+
+<div id="toast" class="toast"></div>
+<script src="config.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const I18N={
+ en:{
+  language:'Language',liveGallery:'Live gallery',admin:'Admin',eventGallery:'Event Gallery',galleryDesc:'Tap any photo to view, favorite, share or save. New photos can appear automatically while the photographer uploads.',
+  allPhotos:'All photos',indexExistingFaces:'Index existing photos',findMyPhotos:'Find my photos',share:'Share',clear:'Clear',noPhotos:'No photos found',tryDifferent:'Try a different search or clear your filters.',matchedBanner:'Showing photos matched to <b>your face</b>',save:'Save',favorite:'♡ Favorite',studioAdmin:'Studio Admin',close:'Close',adminLoginDesc:'Sign in with the Supabase Auth user created for the studio.',email:'Email',password:'Password',signIn:'Sign in',newEventName:'New event name',eventDescription:'Event description',locationExample:'Location e.g. Taunggyi',createEvent:'Create Event',currentLocation:'Current event location',changeLocation:'Change current event location',updateLocation:'Update Location',uploadCurrent:'Upload to current event',uploadDesc:'Choose multiple photos. Uploads are stored in Supabase Storage.',eventQr:'Event QR',showQr:'Show QR for this event',signOut:'Sign out',faceIntro:"We'll scan your face just once and match it against photos from this event. Nothing is shared with other guests or the studio.",continue:'Continue',facePrivacy:"Your face data is used only to filter this gallery and isn't kept after you close this screen.",centerFace:'Center your face and hold still.',capture:'Capture',comparing:'Comparing with photos…',fewSeconds:'This usually takes a few seconds.',foundPhotos:'Found you in some photos',matchedDesc:'These are now filtered under Matched. You can clear this anytime.',viewMatched:'View matched photos',matchedPhotos:'matched photos',searchPlaceholder:'Search photo ID / filename…',eventPhoto:'photos',locationHint:'Type a location and Location + Weather will update automatically.',currentLocationHint:'Change the current location to update Location + Weather in the gallery.',locationSearch:'Searching for location…',locationEnter:'Enter a location',locationUpdated:'Location + Weather updated',locationNotFound:'Location not found',weatherUnavailable:'Weather unavailable',weatherLoading:'Loading weather…',weatherClear:'Clear',weatherPartly:'Partly cloudy',weatherCloudy:'Cloudy',weatherFog:'Fog',weatherDrizzle:'Drizzle',weatherRain:'Rain',weatherSnow:'Snow',weatherStorm:'Thunderstorm',general:'General',eventPhotoAlt:'Event photo',galleryVisibility:'Gallery photo visibility',galleryVisibilityDesc:'ON = clients can see All photos. OFF = clients must use Find my photos and only matched photos are shown.',visibilityOn:'All photos visible',visibilityOff:'Private — matched photos only',privateGalleryNotice:'🔒 Private gallery — use Find my photos to see only your matched photos.',visibilityUpdated:'Gallery visibility updated',loadMore:'Load more',
+  eventNotFound:'Event not found',signInFirst:'Sign in first',photoLinkCopied:'Photo link copied',eventLinkCopied:'Event link copied',configureSupabase:'Configure Supabase first',signedIn:'Signed in',indexingFaces:'Indexing faces',indexingExisting:'Indexing existing photo',doneIndexing:'Done',indexedSuffix:'photos indexed.',eventCreatedCopied:'Event created — link copied',newPhotoAdded:'New photo added',detectingFace:'Detecting your face…',noFaceDetected:'No face detected. Please try again.',captureOneFace:'Please capture only one face.',comparingEventPhotos:'Comparing against event photos…',weatherLabel:'Weather',greetMorning:'Good morning',greetAfternoon:'Good afternoon',greetEvening:'Good evening',greetNight:'Good night',greetHello:'Hello',themeLight:'Light',themeDark:'Dark',themeAuto:'Auto'
+ },
+ my:{
+  language:'ဘာသာစကား',liveGallery:'Live Gallery',admin:'Admin',eventGallery:'Event Gallery',galleryDesc:'ဓာတ်ပုံကို နှိပ်ပြီး ကြည့်ရှုနိုင်သလို Favorite၊ Share နဲ့ Save လုပ်နိုင်ပါတယ်။ ဓာတ်ပုံဆရာက အသစ်တင်လိုက်တာနဲ့ အလိုအလျောက် ပေါ်လာပါမယ်။',
+  allPhotos:'ဓာတ်ပုံအားလုံး',indexExistingFaces:'ရှိပြီးသားဓာတ်ပုံများကို Face AI စစ်မည်',findMyPhotos:'ကိုယ့်ဓာတ်ပုံ ရှာမယ်',share:'မျှဝေမည်',clear:'ဖျက်မည်',noPhotos:'ဓာတ်ပုံ မတွေ့ပါ',tryDifferent:'Search သို့မဟုတ် Filter ကို ပြောင်းပြီး ထပ်စမ်းကြည့်ပါ။',matchedBanner:'သင့်မျက်နှာနဲ့ ကိုက်ညီတဲ့ ဓာတ်ပုံတွေကို ပြသနေပါတယ်',save:'သိမ်းမည်',favorite:'♡ နှစ်သက်သော',studioAdmin:'Studio Admin',close:'ပိတ်မည်',adminLoginDesc:'Studio အတွက် ဖန်တီးထားသော Supabase Auth အကောင့်ဖြင့် ဝင်ရောက်ပါ။',email:'အီးမေးလ်',password:'စကားဝှက်',signIn:'ဝင်ရောက်မည်',newEventName:'Event အမည်အသစ်',eventDescription:'Event အကြောင်းအရာ',locationExample:'Location ဥပမာ — Taunggyi',createEvent:'Event ဖန်တီးမည်',currentLocation:'လက်ရှိ Event Location',changeLocation:'လက်ရှိ Event Location ပြောင်းရန်',updateLocation:'Location ပြောင်းမည်',uploadCurrent:'လက်ရှိ Event သို့ ဓာတ်ပုံတင်ရန်',uploadDesc:'ဓာတ်ပုံများကို တစ်ကြိမ်တည်း အများအပြား ရွေးနိုင်ပါတယ်။ Supabase Storage ထဲသို့ သိမ်းဆည်းပါမယ်။',eventQr:'Event QR',showQr:'ဒီ Event အတွက် QR ပြမည်',signOut:'ထွက်မည်',faceIntro:'ဒီ Event ထဲက ဓာတ်ပုံတွေနဲ့ ကိုက်ညီမှုရှာဖို့ သင့်မျက်နှာကို တစ်ကြိမ်သာ Scan လုပ်ပါမယ်။ အခြားဧည့်သည်များ သို့မဟုတ် Studio နဲ့ မျှဝေမှာမဟုတ်ပါ။',continue:'ဆက်လုပ်မည်',facePrivacy:'သင့်မျက်နှာဒေတာကို ဒီ Gallery ထဲမှာ ကိုက်ညီတဲ့ဓာတ်ပုံတွေ စစ်ထုတ်ရန်သာ အသုံးပြုပြီး ဒီစာမျက်နှာပိတ်လိုက်တာနဲ့ သိမ်းထားမှာ မဟုတ်ပါ။',centerFace:'မျက်နှာကို အလယ်မှာထားပြီး ငြိမ်ငြိမ်နေပါ။',capture:'ရိုက်မည်',comparing:'ဓာတ်ပုံများနှင့် ကိုက်ညီမှု စစ်ဆေးနေသည်…',fewSeconds:'စက္ကန့်အနည်းငယ် ကြာနိုင်ပါတယ်။',foundPhotos:'သင့်ဓာတ်ပုံတွေကို တွေ့ပါပြီ',matchedDesc:'တွေ့ရှိထားတဲ့ ဓာတ်ပုံတွေကို Matched အောက်မှာ စစ်ထုတ်ထားပါတယ်။ အချိန်မရွေး ဖျက်နိုင်ပါတယ်။',viewMatched:'Matched ဓာတ်ပုံများ ကြည့်မည်',matchedPhotos:'ကိုက်ညီသော ဓာတ်ပုံ',searchPlaceholder:'Photo ID / ဖိုင်အမည် ရှာရန်…',eventPhoto:'ဓာတ်ပုံ',locationHint:'Location ရိုက်ထည့်လိုက်တာနဲ့ Location + Weather အလိုအလျောက် ပြောင်းပေးပါမယ်။',currentLocationHint:'လက်ရှိ Location ကို ပြောင်းလိုက်ရင် Gallery ရဲ့ Location + Weather အလိုအလျောက် ပြောင်းပါမယ်။',locationSearch:'Location ရှာနေသည်…',locationEnter:'Location ထည့်ပါ',locationUpdated:'Location + Weather ပြောင်းပြီးပါပြီ',locationNotFound:'Location မတွေ့ပါ',weatherUnavailable:'ရာသီဥတု မရရှိသေးပါ',weatherLoading:'ရာသီဥတု ရယူနေသည်…',weatherClear:'ကြည်လင်',weatherPartly:'တိမ်အနည်းငယ်',weatherCloudy:'တိမ်ထူ',weatherFog:'မြူ',weatherDrizzle:'မိုးဖွဲ',weatherRain:'မိုးရွာ',weatherSnow:'နှင်း',weatherStorm:'မိုးကြိုးမုန်တိုင်း',general:'အထွေထွေ',eventPhotoAlt:'Event ဓာတ်ပုံ',galleryVisibility:'Gallery ဓာတ်ပုံ မြင်နိုင်မှု',galleryVisibilityDesc:'ဖွင့်ထားရင် Client တွေက ဓာတ်ပုံအားလုံးကို မြင်နိုင်ပါတယ်။ ပိတ်ထားရင် Find my photos နဲ့ ကိုက်ညီတဲ့ဓာတ်ပုံတွေပဲ မြင်ရပါမယ်။',visibilityOn:'ဓာတ်ပုံအားလုံး မြင်နိုင်သည်',visibilityOff:'Private — ကိုက်ညီသောဓာတ်ပုံများသာ',privateGalleryNotice:'🔒 Private Gallery — Find my photos နဲ့ ကိုယ့်ဓာတ်ပုံတွေကိုသာ ရှာကြည့်ပါ။',visibilityUpdated:'Gallery မြင်နိုင်မှု ပြောင်းပြီးပါပြီ',loadMore:'နောက်ထပ်ပြရန်',
+  eventNotFound:'Event မတွေ့ပါ',signInFirst:'အရင်ဝင်ရောက်ပါ',photoLinkCopied:'Photo link ကူးယူပြီးပါပြီ',eventLinkCopied:'Event link ကူးယူပြီးပါပြီ',configureSupabase:'Supabase ကို အရင်ချိတ်ဆက်ပါ',signedIn:'ဝင်ရောက်ပြီးပါပြီ',indexingFaces:'မျက်နှာများ စစ်ဆေးနေသည်',indexingExisting:'Face AI စစ်နေသည်',doneIndexing:'ပြီးပါပြီ',indexedSuffix:'ဓာတ်ပုံ အညွှန်းလုပ်ပြီးပါပြီ။',eventCreatedCopied:'Event ဖန်တီးပြီးပါပြီ — link ကို ကူးယူပြီးပါပြီ',newPhotoAdded:'ဓာတ်ပုံအသစ် ထည့်ပြီးပါပြီ',detectingFace:'မျက်နှာကို AI နဲ့ စစ်ဆေးနေသည်…',noFaceDetected:'မျက်နှာမတွေ့ပါ။ ပြန်ရိုက်ပါ။',captureOneFace:'မျက်နှာတစ်ခုတည်းကိုသာ ဖမ်းယူပါ။',comparingEventPhotos:'Event ဓာတ်ပုံများထဲမှာ ကိုက်ညီမှု ရှာနေသည်…',foundInPhotoTemplate:'{n} ပုံမှာ သင့်မျက်နှာကို တွေ့ပါတယ်',weatherLabel:'ရာသီဥတု',greetMorning:'မင်္ဂလာမနက်ခင်းပါ',greetAfternoon:'မင်္ဂလာနေ့လည်ခင်းပါ',greetEvening:'မင်္ဂလာညနေခင်းပါ',greetNight:'မင်္ဂလာညချမ်းပါ',greetHello:'မင်္ဂလာပါ',themeLight:'အလင်း',themeDark:'အမှောင်',themeAuto:'အလိုအလျောက်'
+ },
+ zh:{
+  language:'语言',liveGallery:'实时相册',admin:'管理员',eventGallery:'活动相册',galleryDesc:'点击任意照片可查看、收藏、分享或保存。摄影师上传新照片时会自动显示。',
+  allPhotos:'全部照片',indexExistingFaces:'为现有照片进行人脸识别',findMyPhotos:'查找我的照片',share:'分享',clear:'清除',noPhotos:'未找到照片',tryDifferent:'请尝试其他搜索词或清除筛选条件。',matchedBanner:'正在显示与<b>您的面部</b>匹配的照片',save:'保存',favorite:'♡ 收藏',studioAdmin:'Studio Admin',close:'关闭',adminLoginDesc:'请使用为影楼创建的 Supabase 账户登录。',email:'邮箱',password:'密码',signIn:'登录',newEventName:'新活动名称',eventDescription:'活动描述',locationExample:'地点，例如：东枝',createEvent:'创建活动',currentLocation:'当前活动地点',changeLocation:'更改当前活动地点',updateLocation:'更新地点',uploadCurrent:'上传到当前活动',uploadDesc:'可选择多张照片，上传后将保存在 Supabase 存储中。',eventQr:'活动二维码',showQr:'显示此活动的二维码',signOut:'退出登录',faceIntro:'我们只会扫描您的面部一次，用于匹配此活动中的照片。数据不会与其他嘉宾或影楼共享。',continue:'继续',facePrivacy:'您的面部数据仅用于筛选此相册，关闭此页面后不会被保留。',centerFace:'请将脸部对准中心并保持不动。',capture:'拍摄',comparing:'正在与照片进行比对……',fewSeconds:'通常只需几秒钟。',foundPhotos:'已在部分照片中找到您',matchedDesc:'这些照片现已归类于"已匹配"。您可以随时清除此筛选。',viewMatched:'查看匹配的照片',matchedPhotos:'张匹配照片',searchPlaceholder:'搜索照片编号 / 文件名……',eventPhoto:'张照片',locationHint:'输入地点后，位置和天气将自动更新。',currentLocationHint:'更改当前地点将自动更新相册中的位置和天气。',locationSearch:'正在搜索地点……',locationEnter:'请输入地点',locationUpdated:'位置和天气已更新',locationNotFound:'未找到该地点',weatherUnavailable:'天气信息暂不可用',weatherLoading:'正在加载天气……',weatherClear:'晴朗',weatherPartly:'局部多云',weatherCloudy:'多云',weatherFog:'有雾',weatherDrizzle:'小雨',weatherRain:'下雨',weatherSnow:'下雪',weatherStorm:'雷暴',general:'常规',eventPhotoAlt:'活动照片',galleryVisibility:'相册照片可见性',galleryVisibilityDesc:'开启 = 客户可查看全部照片。关闭 = 客户必须使用"查找我的照片"，仅显示匹配到的照片。',visibilityOn:'全部照片可见',visibilityOff:'私密 — 仅显示匹配照片',privateGalleryNotice:'🔒 私密相册 — 请使用"查找我的照片"仅查看您匹配到的照片。',visibilityUpdated:'相册可见性已更新',loadMore:'加载更多',
+  eventNotFound:'未找到活动',signInFirst:'请先登录',photoLinkCopied:'照片链接已复制',eventLinkCopied:'活动链接已复制',configureSupabase:'请先配置 Supabase',signedIn:'已登录',indexingFaces:'正在识别人脸',indexingExisting:'正在为现有照片建立索引',doneIndexing:'完成',indexedSuffix:'张照片已建立索引。',eventCreatedCopied:'活动已创建 — 链接已复制',newPhotoAdded:'已添加新照片',detectingFace:'正在检测您的面部……',noFaceDetected:'未检测到面部，请重试。',captureOneFace:'请确保画面中只有一张脸。',comparingEventPhotos:'正在与活动照片进行比对……',foundInPhotoTemplate:'已在 {n} 张照片中找到您',weatherLabel:'天气',greetMorning:'早上好',greetAfternoon:'下午好',greetEvening:'晚上好',greetNight:'晚安',greetHello:'你好',themeLight:'浅色',themeDark:'深色',themeAuto:'自动'
+ },
+ shn:{
+  language:'ၽႃႇသႃႇ',liveGallery:'Live Gallery',admin:'Admin',eventGallery:'Event Gallery',galleryDesc:'ၸၢၵ်ႇႁၢင်ႈလႂ်ၵေႃႈလႆႈ တူၺ်း၊ ဢဝ်ၸႂ်ႉ Favorite၊ Share ဢမ်ႇၼၼ် Save လႆႈ။ ႁၢင်ႈမႂ်ႇတေပေႃႇမႃး ၸဵမ်ၶၢဝ်းယၢမ်း ၸဝ်ႈႁၢင်ႈတင်ႈၶိုၼ်ႈယူႇ။',
+  allPhotos:'ႁၢင်ႈတင်းမူတ်း',indexExistingFaces:'ၸႅၵ်ႇၸၼ်ႉ ႁၢင်ႈဢၼ်မီးဝႆႉ ဢဝ် Face AI',findMyPhotos:'ႁႃႁၢင်ႈၶွင်ၸဝ်ႈ',share:'ဢဝ်ၽၢႆႇပၼ်',clear:'ႁဵတ်းၽၢင်ႇ',noPhotos:'ဢမ်ႇႁၼ်ႁၢင်ႈ',tryDifferent:'ၶႅၼ်းတဝ်း ႁႃၶိုၼ်း ဢမ်ႇၼၼ် ႁဵတ်းၽၢင်ႇ Filter ၸိူဝ်း။',matchedBanner:'ပၼ်ႁၢင်ႈ ၸိူဝ်းၸႃးၶိုၼ်ႈ <b>ၼႃႈတႃၸဝ်ႈ</b> ယူႇ',save:'သိမ်း',favorite:'♡ ၸွမ်းၸႂ်',studioAdmin:'Studio Admin',close:'ပိၵ်ႉ',adminLoginDesc:'ၶဝ်ႈသူးသေ ၸႂ်ႉ Supabase Auth ဢၼ်ႁဵတ်းပၼ် Studio ဝႆႉ။',email:'Email',password:'Password',signIn:'ၶဝ်ႈသူး',newEventName:'ၸိုဝ်ႈ Event မႂ်ႇ',eventDescription:'လွင်ႈ Event',locationExample:'တီႈ ဢိၵ်ႇၼင်ႇ Taunggyi',createEvent:'ႁဵတ်း Event',currentLocation:'တီႈ Event ၽၢႆႇလင်ၶိုၼ်ႈမႃး',changeLocation:'ူပ်ႈလႅၵ်ႈ တီႈ Event ၽၢႆႇလင်',updateLocation:'ူပ်ႈလႅၵ်ႈ တီႈ',uploadCurrent:'တင်ႈၶိုၼ်ႈ ၶဝ်ႈသူး Event ၽၢႆႇလင်',uploadDesc:'ၸၢင်ႈလိူၵ်ႈ ႁၢင်ႈလၢႆလၢႆ ပႃႈၸမ်တၢင်း။ တေသိမ်းဝႆႉတီႈ Supabase Storage။',eventQr:'Event QR',showQr:'ပၼ် QR ဢၼ်ၼႆႉ Event',signOut:'ဢွၵ်ႇ',faceIntro:'ႁဝ်းတေၵူတ်ႇထတ်း ၼႃႈတႃၸဝ်ႈ ၵမ်းလဵဝ်ၵူၺ်းသေ ဢဝ်ၸွမ်း ႁၢင်ႈၼႂ်း Event ၼႆႉ။ ဢမ်ႇဢဝ်ၽၢႆႇပၼ် ၽူႈမႃးၸူးၵေႃႉတၢင်ႇ ဢမ်ႇၼၼ် Studio။',continue:'ႁဵတ်းၵႂႃႇထႅင်ႈ',facePrivacy:'ၶေႃႈမုၼ်း ၼႃႈတႃၸဝ်ႈ ၸႂ်ႉတိုဝ်းတေႃႇ ၸႅၵ်ႇၸၼ်ႉ ႁၢင်ႈၼႂ်းၼႆႉၵူၺ်း ဢမ်ႇသိမ်းဝႆႉ ဝၢႆးသေ ပိၵ်ႉၼႃႈလိၵ်ႈၼႆႉ။',centerFace:'ဝၢင်းၼႃႈတႃ ၵၢင်ၵၢင်သေ ယူႇၼိမ်ၼိမ်။',capture:'ၶူပ်း',comparing:'ႁဵတ်းၽၢင်ႇၸွမ်း ႁၢင်ႈယူႇ…',fewSeconds:'ပီႇၸုမ်း ဝၢႆးသေ ၶၢဝ်းယၢမ်းဢေႇဢေႇၵူၺ်း။',foundPhotos:'ႁၼ်ၸဝ်ႈ ၼႂ်းႁၢင်ႈၽွင်ႈယဝ်ႉ',matchedDesc:'ႁၢင်ႈၸိူဝ်းၼႆႉ ယၢမ်းလဵဝ် ယူႇတႂ်ႈ Matched ယဝ်ႉ။ ၸၢင်ႈႁဵတ်းၽၢင်ႇ လႆႈတင်းသဵင်ႈ ၶၢဝ်းယၢမ်း။',viewMatched:'တူၺ်း ႁၢင်ႈ Matched',matchedPhotos:'ႁၢင်ႈ Matched',searchPlaceholder:'ႁႃ Photo ID / ၸိုဝ်ႈဖၢႆႇ…',eventPhoto:'ႁၢင်ႈ',locationHint:'သႂ်ႇတီႈသေ Location + Weather တေလႅၵ်ႈလၢႆႈၸဝ်ႈၵဝ်ႇ။',currentLocationHint:'ူပ်ႈလႅၵ်ႈ တီႈၽၢႆႇလင် တေလႅၵ်ႈလၢႆႈ Location + Weather ၼႂ်း Gallery။',locationSearch:'ႁႃတီႈယူႇ…',locationEnter:'သႂ်ႇတီႈ',locationUpdated:'Location + Weather လႅၵ်ႈလၢႆႈယဝ်ႉ',locationNotFound:'ဢမ်ႇႁၼ်တီႈ',weatherUnavailable:'ဢမ်ႇမီး Weather',weatherLoading:'ၶူပ်း Weather ယူႇ…',weatherClear:'ၸိူဝ်ႉသႂ်',weatherPartly:'မိူဝ်ႉၽွင်ႈ',weatherCloudy:'မိူဝ်ႉၼမ်',weatherFog:'မွၵ်ႇ',weatherDrizzle:'ၾူၼ်ဢေႇ',weatherRain:'ၾူၼ်တူၵ်း',weatherSnow:'မႆႈၶႅင်',weatherStorm:'လူမ်းလႅင်ႉ',general:'ၵူႈလွင်ႈ',eventPhotoAlt:'ႁၢင်ႈ Event',galleryVisibility:'လွင်ႈႁၼ် ႁၢင်ႈၼႂ်း Gallery',galleryVisibilityDesc:'ဢၼ်ဢွၼ်ႇ = Client ၸၢင်ႈႁၼ် ႁၢင်ႈတင်းမူတ်း။ ပိၵ်ႉဝႆႉ = Client လူဝ်ႇၸႂ်ႉ Find my photos သေ ႁၼ်ၵူၺ်း ႁၢင်ႈ Matched။',visibilityOn:'ႁၢင်ႈတင်းမူတ်း ႁၼ်လႆႈ',visibilityOff:'Private — ႁၢင်ႈ Matched ၵူၺ်း',privateGalleryNotice:'🔒 Private Gallery — ၸႂ်ႉ Find my photos သေ ႁႃတူၺ်း ႁၢင်ႈၶွင်ၸဝ်ႈၵူၺ်း။',visibilityUpdated:'လွင်ႈႁၼ် Gallery လႅၵ်ႈလၢႆႈယဝ်ႉ',loadMore:'ၼႄထႅင်ႈ',
+  eventNotFound:'ဢမ်ႇႁၼ် Event',signInFirst:'ၶဝ်ႈသူး ဢွၼ်တၢင်း',photoLinkCopied:'Photo link ၶူးဝႆႉယဝ်ႉ',eventLinkCopied:'Event link ၶူးဝႆႉယဝ်ႉ',configureSupabase:'ၸွမ်းၽိတ်ႈ Supabase ဢွၼ်တၢင်း',signedIn:'ၶဝ်ႈသူးယဝ်ႉ',indexingFaces:'ၵူတ်ႇထတ်း ၼႃႈတႃယူႇ',indexingExisting:'Face AI ၵူတ်ႇထတ်းယူႇ',doneIndexing:'ယဝ်ႉယဝ်ႉ',indexedSuffix:'ႁၢင်ႈ ၵူတ်ႇထတ်းယဝ်ႉ။',eventCreatedCopied:'Event ႁဵတ်းယဝ်ႉ — link ၶူးဝႆႉယဝ်ႉ',newPhotoAdded:'ႁၢင်ႈမႂ်ႇ ထၢပ်းသႂ်ႇယဝ်ႉ',detectingFace:'ၵူတ်ႇထတ်း ၼႃႈတႃၸဝ်ႈယူႇ…',noFaceDetected:'ဢမ်ႇႁၼ်ၼႃႈတႃ။ ၶႅၼ်းတဝ်း ႁဵတ်းၶိုၼ်း။',captureOneFace:'ၶူပ်းဢဝ် ၼႃႈတႃလဵဝ်ၵူၺ်း။',comparingEventPhotos:'ႁဵတ်းၽၢင်ႇၸွမ်း ႁၢင်ႈ Event ယူႇ…',foundInPhotoTemplate:'ႁၼ်ၸဝ်ႈ ၼႂ်းႁၢင်ႈ {n} ႁူပ်ႉယဝ်ႉ',weatherLabel:'ၽိင်ႈလိၼ်ၽိင်ႈၾႃႉ',greetMorning:'မွၵ်ႇသိူဝ်း ၵၢင်ၼႂ်',greetAfternoon:'မွၵ်ႇသိူဝ်း ဝၼ်းလင်',greetEvening:'မွၵ်ႇသိူဝ်း တၢမ်းၶမ်ႈ',greetNight:'မွၵ်ႇသိူဝ်း ၵၢင်ၶိုၼ်း',greetHello:'ႁွင်ႉတွင်ႈ',themeLight:'ၶၢဝ်ႉ',themeDark:'ၶမ်း',themeAuto:'Auto'
+ }
+};
+const LANGS=['en','my','zh','shn'];
+let LANG=LANGS.includes(localStorage.getItem('moehein2_lang'))?localStorage.getItem('moehein2_lang'):'my';
+function t(k){return (I18N[LANG]&&I18N[LANG][k])||I18N.en[k]||k}
+const THEME_ICONS={light:'☀️',dark:'🌙',auto:'🖥️'};
+const LANG_BADGES={en:{icon:'EN',bg:'#3b6fd1',color:'#fff',label:'English'},my:{icon:'မ',bg:'#c2a06a',color:'#141210',label:'မြန်မာ'},zh:{icon:'中',bg:'#d1483b',color:'#fff',label:'中文'},shn:{icon:'တ',bg:'#7b5bd6',color:'#fff',label:'တႆး'}};
+function toggleDropdown(id){
+  document.querySelectorAll('.dropdown').forEach(d=>{if(d.id!==id)d.classList.remove('open')});
+  document.getElementById(id)?.classList.toggle('open');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.dropdown'))document.querySelectorAll('.dropdown.open').forEach(d=>d.classList.remove('open'));
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.dropdown.open').forEach(d=>d.classList.remove('open'))});
+function updateThemeTrigger(mode){
+  const icon=THEME_ICONS[mode]||THEME_ICONS.auto;
+  const ic=$('themeTriggerIcon');if(ic)ic.textContent=icon;
+  const lb=$('themeTriggerLabel');if(lb)lb.textContent=t('theme'+mode[0].toUpperCase()+mode.slice(1));
+}
+function updateLangTrigger(){
+  const b=LANG_BADGES[LANG]||LANG_BADGES.my;
+  const ic=$('langTriggerIcon');
+  if(ic){ic.textContent=b.icon;ic.classList.add('lang-badge');ic.style.background=b.bg;ic.style.color=b.color}
+  const lb=$('langTriggerLabel');if(lb)lb.textContent=b.label;
+}
+function applyTheme(){
+  const stored=localStorage.getItem('moehein2_theme')||'auto';
+  let eff=stored;
+  if(stored==='auto')eff=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';
+  document.documentElement.setAttribute('data-theme',eff);
+  const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',eff==='light'?'#f8f3e8':'#121110');
+  document.getElementById('themeLight')?.classList.toggle('active',stored==='light');
+  document.getElementById('themeDark')?.classList.toggle('active',stored==='dark');
+  document.getElementById('themeAuto')?.classList.toggle('active',stored==='auto');
+  updateThemeTrigger(stored);
+}
+function setTheme(mode){localStorage.setItem('moehein2_theme',mode);applyTheme();document.getElementById('themeDropdown')?.classList.remove('open')}
+if(window.matchMedia){window.matchMedia('(prefers-color-scheme: light)').addEventListener('change',()=>{if((localStorage.getItem('moehein2_theme')||'auto')==='auto')applyTheme()})}
+applyTheme();
+function setLanguage(lang){LANG=LANGS.includes(lang)?lang:'my';localStorage.setItem('moehein2_lang',LANG);document.documentElement.lang=({en:'en',my:'my',zh:'zh',shn:'shn'})[LANG];document.documentElement.classList.toggle('lang-my',LANG==='my');document.documentElement.classList.toggle('lang-zh',LANG==='zh');document.documentElement.classList.toggle('lang-shn',LANG==='shn');document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(k==='matchedBanner')el.innerHTML=`${t('matchedBanner')||'Showing photos matched to <b>your face</b>'}`;else el.textContent=t(k)});document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.placeholder=t(el.dataset.i18nPlaceholder));LANGS.forEach(l=>$('lang'+l[0].toUpperCase()+l.slice(1))?.classList.toggle('active',LANG===l));updateLangTrigger();updateThemeTrigger(localStorage.getItem('moehein2_theme')||'auto');document.getElementById('langDropdown')?.classList.remove('open');updateDateTime();loadWeather();render();}
+function initLanguage(){setLanguage(LANG)}
+const CONFIG=Object.assign({
+ SUPABASE_URL:"",
+ SUPABASE_ANON_KEY:"",
+ DEFAULT_EVENT_ID:""
+}, window.SUPABASE_CONFIG || {});
+const params=new URLSearchParams(location.search);
+let EVENT_ID=params.get("event")||CONFIG.DEFAULT_EVENT_ID;
+let sb=null, photos=[], current=0, session=null, SHOW_ALL_PHOTOS=true;
+let realtimeChannel=null;
+let matchedIds=null;
+let camStream=null;
+const PAGE_SIZE=24;
+let VISIBLE_COUNT=PAGE_SIZE;
+const FACE_MODEL_URL="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
+let faceModelsReady=null;
+const FACE_MATCH_THRESHOLD=0.55;
+const configured=CONFIG.SUPABASE_URL.startsWith("http")&&!CONFIG.SUPABASE_ANON_KEY.startsWith("YOUR_");if(configured) sb=supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY);
+
+// ------------------------------------------------------------
+ // Greeting + exact local date/time + event location + weather
+ // Change these 3 values if the event is in another city.
+ // Weather uses the free Open-Meteo API; no API key is required.
+ // ------------------------------------------------------------
+ let EVENT_LOCATION={name:"ရန်ကုန်",lat:16.8409,lon:96.1735};
+ let weatherTimer=null, locationSearchTimer=null;
+ async function geocodeLocation(query){
+   const q=String(query||"").trim();
+   if(!q) throw new Error(t("locationEnter"));
+   const url=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`;
+   const r=await fetch(url,{cache:"no-store"});
+   if(!r.ok) throw new Error(t("locationNotFound"));
+   const data=await r.json();
+   if(!data.results||!data.results.length) throw new Error(t("locationNotFound"));
+   const x=data.results[0];
+   return {name:[x.name,x.admin1,x.country].filter(Boolean).join(", "),lat:x.latitude,lon:x.longitude};
+ }
+ async function applyLocation(text,silent=false){
+   try{
+     const loc=await geocodeLocation(text);
+     EVENT_LOCATION=loc;
+     updateDateTime();
+     await loadWeather();
+     if(!silent) toast(`Location: ${loc.name}`);
+     return loc;
+   }catch(e){
+     if(!silent) toast(e.message||"Location မရှာနိုင်ပါ");
+     throw e;
+   }
+ }
+ function wireLocationPreview(){
+   const inputs=[
+     ["newLocation","locationStatus"],
+     ["currentLocation","currentLocationStatus"]
+   ];
+   inputs.forEach(([inputId,statusId])=>{
+     const input=document.getElementById(inputId);if(!input)return;
+     input.addEventListener("input",()=>{
+       clearTimeout(locationSearchTimer);
+       const v=input.value.trim();
+       if(!v){document.getElementById(statusId).textContent=t("locationEnter");return}
+       document.getElementById(statusId).textContent=t("locationSearch");
+       locationSearchTimer=setTimeout(async()=>{
+         try{
+           const loc=await applyLocation(v,true);
+           document.getElementById(statusId).textContent=`✓ ${loc.name} · Weather updated`;
+         }catch(e){document.getElementById(statusId).textContent=e.message||t('locationNotFound')}
+       },700);
+     });
+   });
+ }
+ const MONTHS={
+   en:["January","February","March","April","May","June","July","August","September","October","November","December"],
+   my:["ဇန်နဝါရီ","ဖေဖော်ဝါရီ","မတ်","ဧပြီ","မေ","ဇွန်","ဇူလိုင်","ဩဂုတ်","စက်တင်ဘာ","အောက်တိုဘာ","နိုဝင်ဘာ","ဒီဇင်ဘာ"],
+   zh:["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"],
+   shn:["January","February","March","April","May","June","July","August","September","October","November","December"]
+ };
+ const DAYS={
+   en:["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+   my:["တနင်္ဂနွေ","တနင်္လာ","အင်္ဂါ","ဗုဒ္ဓဟူး","ကြာသပတေး","သောကြာ","စနေ"],
+   zh:["星期日","星期一","星期二","星期三","星期四","星期五","星期六"],
+   shn:["ဝၼ်းဢႃးတိတ်ႉ","ဝၼ်းၸၼ်","ဝၼ်းဢင်းၵၢၼ်း","ဝၼ်းၽုတ်ႉ","ဝၼ်းၽတ်း","ဝၼ်းသုၵ်း","ဝၼ်းသဝ်"]
+ };
+
+ function getGreeting(h){
+   let k;
+   if(h>=5&&h<12)k='greetMorning';
+   else if(h>=12&&h<17)k='greetAfternoon';
+   else if(h>=17&&h<22)k='greetEvening';
+   else if(h>=22||h<5)k='greetNight';
+   else k='greetHello';
+   return t(k);
+ }
+
+ function formatTime(d){
+   let h=d.getHours(), m=String(d.getMinutes()).padStart(2,"0");
+   const suffix=h>=12?"PM":"AM"; h=h%12||12;
+   return `${h}:${m} ${suffix}`;
+ }
+
+ function updateDateTime(){
+   const d=new Date();
+   $("greeting").textContent=getGreeting(d.getHours());
+   const months=MONTHS[LANG]||MONTHS.en, days=DAYS[LANG]||DAYS.en;
+   if(LANG==='zh')$("dateLine").textContent=`${months[d.getMonth()]}${d.getDate()}日 · ${days[d.getDay()]}`;
+   else if(LANG==='my')$("dateLine").textContent=`${days[d.getDay()]} · ${months[d.getMonth()]} ${d.getDate()} ရက်`;
+   else $("dateLine").textContent=`${days[d.getDay()]} · ${months[d.getMonth()]} ${d.getDate()}`;
+   $("timeLine").textContent=formatTime(d);
+   $("locationLine").textContent=EVENT_LOCATION.name;
+ }
+
+ function weatherIcon(code){
+   if(code===0) return "☀️";
+   if(code===1||code===2) return "🌤️";
+   if(code===3) return "☁️";
+   if([45,48].includes(code)) return "🌫️";
+   if([51,53,55,56,57].includes(code)) return "🌦️";
+   if([61,63,65,66,67,80,81,82].includes(code)) return "🌧️";
+   if([71,73,75,77,85,86].includes(code)) return "🌨️";
+   if([95,96,99].includes(code)) return "⛈️";
+   return "☁️";
+ }
+
+ function weatherText(code){
+   if(code===0) return t('weatherClear');
+   if(code===1||code===2) return t('weatherPartly');
+   if(code===3) return t('weatherCloudy');
+   if([45,48].includes(code)) return t('weatherFog');
+   if([51,53,55,56,57].includes(code)) return t('weatherDrizzle');
+   if([61,63,65,80,81,82].includes(code)) return t('weatherRain');
+   if([66,67].includes(code)) return t('weatherSnow');
+   if([71,73,75,77,85,86].includes(code)) return t('weatherSnow');
+   if([95,96,99].includes(code)) return t('weatherStorm');
+   return t('weatherLabel');
+ }
+
+ async function loadWeather(){
+   try{
+     const url=`https://api.open-meteo.com/v1/forecast?latitude=${EVENT_LOCATION.lat}&longitude=${EVENT_LOCATION.lon}&current=temperature_2m,weather_code&timezone=auto`;
+     const r=await fetch(url,{cache:"no-store"});
+     if(!r.ok) throw new Error("weather request failed");
+     const data=await r.json();
+     const c=data.current;
+     $("weatherIcon").textContent=weatherIcon(c.weather_code);
+     $("weatherTemp").textContent=`${Math.round(c.temperature_2m)}°C`;
+     $("weatherDesc").textContent=weatherText(c.weather_code);
+   }catch(e){
+     $("weatherIcon").textContent="☁️";
+     $("weatherTemp").textContent="—°C";
+     $("weatherDesc").textContent=t('weatherUnavailable');
+   }
+ }
+
+ function startDateWeather(){
+   updateDateTime();
+   loadWeather();
+   clearInterval(weatherTimer);
+   weatherTimer=setInterval(()=>{updateDateTime();},1000);
+   setInterval(loadWeather,10*60*1000);
+ }
+
+ initLanguage();
+ startDateWeather();
+ wireLocationPreview();
+
+ const demo=[
+ {id:"DEMO-001",category:"Wedding",url:"https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85",name:"wedding-01.jpg"},
+ {id:"DEMO-002",category:"Portrait",url:"https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=85",name:"portrait-02.jpg"},
+ {id:"DEMO-003",category:"Wedding",url:"https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=1200&q=85",name:"wedding-03.jpg"},
+ {id:"DEMO-004",category:"Event",url:"https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=85",name:"event-04.jpg"}
+];
+
+// face-match state (front-end only demo — see note near openFaceScan)
+function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),1800)}
+async function load(){
+ if(!sb){photos=demo;SHOW_ALL_PHOTOS=true;VISIBLE_COUNT=PAGE_SIZE;$("eventName").textContent="Demo Event";$("count").textContent=photos.length+" "+t("eventPhoto");render();return}
+ const {data:e,error:ee}=await sb.from("events").select("*").eq("id",EVENT_ID).single();
+ if(ee){toast(t('eventNotFound'));return}
+ $("eventName").textContent=e.name||"Event Gallery";$("desc").textContent=e.description||"Moe Hein 2 Event Gallery";
+ SHOW_ALL_PHOTOS=e.show_all_photos!==false;
+ if($("showAllPhotos")){$("showAllPhotos").checked=SHOW_ALL_PHOTOS;updateVisibilityUI()}
+ const savedLocation=e.location_name&&e.latitude!=null&&e.longitude!=null?{name:e.location_name,lat:Number(e.latitude),lon:Number(e.longitude)}:null;
+ if(savedLocation){EVENT_LOCATION=savedLocation;updateDateTime();loadWeather();}
+ $("currentLocation").value=EVENT_LOCATION.name;
+ const {data:p,error}=await sb.from("photos").select("*").eq("event_id",EVENT_ID).order("created_at",{ascending:false});
+ if(error){toast(error.message);return}
+ photos=p||[];VISIBLE_COUNT=PAGE_SIZE;$("count").textContent=photos.length+" "+t("eventPhoto");buildCategories();render();if(SHOW_ALL_PHOTOS)setupRealtime();
+}
+function buildCategories(){const c=$("category");const cats=[...new Set(photos.map(x=>x.category||"General"))].sort();c.innerHTML=`<option value="">${esc(t("allPhotos"))}</option>`+cats.map(x=>`<option>${esc(x)}</option>`).join("")}
+function onFilterChange(){VISIBLE_COUNT=PAGE_SIZE;render()}
+function loadMore(){VISIBLE_COUNT+=PAGE_SIZE;render(true)}
+function render(keepScroll){
+ const q=$("search").value.toLowerCase().trim(),cat=$("category").value;
+ let list=photos.filter(p=>(!cat||(p.category||t("general"))===cat)&&(!q||String(p.photo_id||p.id||"").toLowerCase().includes(q)||String(p.filename||p.name||"").toLowerCase().includes(q)));
+ if(matchedIds) list=list.filter(p=>matchedIds.has(p.id));
+ if(!SHOW_ALL_PHOTOS && !matchedIds) list=[];
+ updateVisibilityUI();
+ const shown=list.slice(0,VISIBLE_COUNT);
+ $("grid").innerHTML=shown.map(p=>`<article class="tile" onclick="openViewerById('${escAttr(p.id)}')"><img loading="lazy" src="${escAttr(p.public_url||p.url)}" alt="${escAttr(p.filename||p.name||t("eventPhotoAlt"))}"><div class="meta"><span class="pill">${esc(p.category||t("general"))}</span></div></article>`).join("");
+ $("empty").classList.toggle("hidden",list.length>0);
+ const hasMore=shown.length<list.length;
+ $("loadMoreWrap").classList.toggle("hidden",!hasMore);
+ $("loadMoreCount").textContent=hasMore?`${shown.length} / ${list.length}`:"";
+ if(!matchedIds)$("count").textContent=photos.length+" "+t("eventPhoto");
+}
+function updateVisibilityUI(){
+ const isPrivate=!SHOW_ALL_PHOTOS && !matchedIds;
+ document.querySelectorAll(".public-filter").forEach(el=>el.classList.toggle("hidden",isPrivate));
+ $("privateNotice")?.classList.toggle("hidden",!isPrivate);
+ if($("visibilityStatus")) $("visibilityStatus").textContent=SHOW_ALL_PHOTOS?t("visibilityOn"):t("visibilityOff");
+}
+async function updatePhotoVisibility(enabled){
+ if(!sb||!session){
+   $("showAllPhotos").checked=SHOW_ALL_PHOTOS;
+   toast(t('signInFirst'));
+   return;
+ }
+ const {error}=await sb.from("events").update({show_all_photos:!!enabled}).eq("id",EVENT_ID);
+ if(error){$("showAllPhotos").checked=SHOW_ALL_PHOTOS;toast(error.message);return}
+ SHOW_ALL_PHOTOS=!!enabled;
+ if(!SHOW_ALL_PHOTOS) matchedIds=null;
+ updateVisibilityUI();render();
+ toast(t("visibilityUpdated"));
+}
+
+function openViewerById(id){const idx=photos.findIndex(p=>String(p.id)===String(id));if(idx<0)return;current=idx;updateViewer();$("modal").classList.add("open")}
+function updateViewer(){const p=photos[current];$("viewerImg").src=p.public_url||p.url;$("viewerImg").alt=p.filename||p.name||t("eventPhotoAlt")}
+function closeViewer(){$("modal").classList.remove("open")}
+function move(n){const visible=photos.filter(p=>SHOW_ALL_PHOTOS|| (matchedIds&&matchedIds.has(p.id)));if(!visible.length)return;const curId=photos[current]?.id;let vi=visible.findIndex(p=>p.id===curId);if(vi<0)vi=0;vi=(vi+n+visible.length)%visible.length;current=photos.findIndex(p=>p.id===visible[vi].id);updateViewer()}
+async function downloadCurrent(){const u=photos[current].public_url||photos[current].url;const a=document.createElement("a");a.href=u;a.target="_blank";a.download=photos[current].filename||"photo.jpg";a.click()}
+async function shareCurrent(){const u=photos[current].public_url||photos[current].url;if(navigator.share)await navigator.share({title:"Moe Hein 2 Event Photo",url:u});else{await navigator.clipboard.writeText(u);toast(t('photoLinkCopied'))}}
+function toggleFavorite(){const p=photos[current], key="mh2fav:"+EVENT_ID, arr=JSON.parse(localStorage.getItem(key)||"[]");const id=p.id;if(arr.includes(id)){localStorage.setItem(key,JSON.stringify(arr.filter(x=>x!==id)));toast("Removed from favorites")}else{arr.push(id);localStorage.setItem(key,JSON.stringify(arr));toast("Added to favorites")}}
+async function shareEvent(){const u=location.href;if(navigator.share)await navigator.share({title:$("eventName").textContent,url:u});else{await navigator.clipboard.writeText(u);toast(t('eventLinkCopied'))}}
+function showQR(){const u=location.href;const box=$("qrBox");box.innerHTML=`<img class="qr" alt="QR" src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(u)}"><div class="status">${esc(u)}</div>`;$("admin").classList.add("open")}
+function openAdmin(){$("admin").classList.add("open");if(session)showAdmin()}
+function closeAdmin(){$("admin").classList.remove("open")}
+function showAdmin(){$("loginBox").classList.add("hidden");$("adminBox").classList.remove("hidden")}
+async function login(){if(!sb){toast(t('configureSupabase'));return}const {data,error}=await sb.auth.signInWithPassword({email:$("email").value,password:$("password").value});if(error){toast(error.message);return}session=data.session;showAdmin();toast(t('signedIn'))}
+async function logout(){if(sb)await sb.auth.signOut();session=null;$("adminBox").classList.add("hidden");$("loginBox").classList.remove("hidden")}
+async function uploadFiles(list){
+ if(!sb||!session){toast(t('signInFirst'));return}
+ let done=0,indexed=0;
+ for(const file of [...list]){
+   const id=crypto.randomUUID(), ext=(file.name.split(".").pop()||"jpg").toLowerCase(), path=`${EVENT_ID}/${id}.${ext}`;
+   $("uploadStatus").textContent=`Uploading ${done+1}/${list.length}: ${file.name}`;
+   const {error:up}=await sb.storage.from("event-photos").upload(path,file,{upsert:false,contentType:file.type});
+   if(up){toast(up.message);continue}
+   const {data:pub}=sb.storage.from("event-photos").getPublicUrl(path);
+   const {error:ins}=await sb.from("photos").insert({id,event_id:EVENT_ID,photo_id:id.slice(0,8).toUpperCase(),filename:file.name,category:"General",storage_path:path,public_url:pub.publicUrl});
+   if(ins){toast(ins.message);continue}
+   done++;
+   $("uploadStatus").textContent=`${t('indexingFaces')} ${done}/${list.length}: ${file.name}`;
+   const n=await indexPhotoFaces(id,file); indexed+=n>0?1:0;
+ }
+ $("uploadStatus").textContent=`Uploaded ${done}/${list.length}. Face index ready for ${indexed} photo${indexed===1?'':'s'}.`;load()
+}
+async function reindexExistingPhotos(){
+ if(!sb||!session){toast(t('signInFirst'));return}
+ const {data:list,error}=await sb.from('photos').select('*').eq('event_id',EVENT_ID).order('created_at',{ascending:true});
+ if(error){toast(error.message);return}
+ let ok=0;
+ for(let i=0;i<(list||[]).length;i++){
+   const p=list[i];
+   $("uploadStatus").textContent=`${t('indexingExisting')} ${i+1}/${list.length}: ${p.filename||p.photo_id}`;
+   try{
+     const r=await fetch(p.public_url,{cache:'no-store'}); if(!r.ok)throw new Error('Image download failed');
+     const blob=await r.blob(); const n=await indexPhotoFaces(p.id,blob); if(n>0)ok++;
+   }catch(e){console.warn('Re-index failed',p.id,e)}
+ }
+ $("uploadStatus").textContent=`${t('doneIndexing')} — ${ok}/${list.length} ${t('indexedSuffix')}`;
+}
+async function createEvent(){
+ if(!sb||!session){toast(t('signInFirst'));return}
+ const name=$("newName").value.trim()||"New Event";
+ const locationText=$("newLocation").value.trim();
+ let loc=null;
+ if(locationText){try{loc=await geocodeLocation(locationText)}catch(e){toast(e.message||t('locationNotFound'));return}}
+ const {data,error}=await sb.from("events").insert({name,description:$("newDesc").value.trim(),event_date:$("newDate").value||null,location_name:loc?.name||null,latitude:loc?.lat??null,longitude:loc?.lon??null}).select().single();
+ if(error){toast(error.message);return}
+ const u=location.origin+location.pathname+"?event="+data.id;
+ await navigator.clipboard?.writeText(u);toast(t('eventCreatedCopied'));EVENT_ID=data.id;history.replaceState({},'',u);load()
+}
+async function updateEventLocation(){
+ if(!sb||!session){toast(t('signInFirst'));return}
+ if(!EVENT_ID){toast("No current event");return}
+ const text=$("currentLocation").value.trim();
+ if(!text){toast(t("locationEnter"));return}
+ try{
+   $("currentLocationStatus").textContent=t("locationSearch");
+   const loc=await geocodeLocation(text);
+   const {error}=await sb.from("events").update({location_name:loc.name,latitude:loc.lat,longitude:loc.lon}).eq("id",EVENT_ID);
+   if(error)throw error;
+   EVENT_LOCATION=loc;updateDateTime();await loadWeather();
+   $("currentLocationStatus").textContent=`✓ ${loc.name} · ${t("locationUpdated")}`;
+   toast(t("locationUpdated"));
+ }catch(e){$("currentLocationStatus").textContent=e.message||t("locationNotFound");toast(e.message||t("locationNotFound"))}
+}
+
+function setupRealtime(){
+ if(!sb||!SHOW_ALL_PHOTOS)return;
+ if(realtimeChannel)sb.removeChannel(realtimeChannel);
+ realtimeChannel=sb.channel("event-"+EVENT_ID).on("postgres_changes",{event:"*",schema:"public",table:"photos",filter:"event_id=eq."+EVENT_ID},payload=>{
+   if(payload.eventType==="INSERT")photos=[payload.new,...photos];
+   if(payload.eventType==="DELETE")photos=photos.filter(x=>x.id!==payload.old.id);
+   buildCategories();render();toast(t('newPhotoAdded'));
+ }).subscribe();
+}
+async function loadFaceModels(){
+ if(faceModelsReady)return faceModelsReady;
+ faceModelsReady=(async()=>{
+   if(!window.faceapi)throw new Error("Face recognition library failed to load.");
+   await Promise.all([
+     faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODEL_URL),
+     faceapi.nets.faceLandmark68Net.loadFromUri(FACE_MODEL_URL),
+     faceapi.nets.faceRecognitionNet.loadFromUri(FACE_MODEL_URL)
+   ]);
+ })().catch(e=>{faceModelsReady=null;throw e});
+ return faceModelsReady;
+}
+function imageFromBlob(blob){return new Promise((resolve,reject)=>{const img=new Image();const u=URL.createObjectURL(blob);img.onload=()=>{URL.revokeObjectURL(u);resolve(img)};img.onerror=()=>{URL.revokeObjectURL(u);reject(new Error("Could not read image."))};img.src=u})}
+async function extractFaceDescriptors(blob){
+ await loadFaceModels();
+ const img=await imageFromBlob(blob);
+ const results=await faceapi.detectAllFaces(img,new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:.5})).withFaceLandmarks().withFaceDescriptors();
+ return results.map(r=>Array.from(r.descriptor));
+}
+async function indexPhotoFaces(photoId,file){
+ if(!sb)return 0;
+ try{
+   const descriptors=await extractFaceDescriptors(file);
+   if(!descriptors.length)return 0;
+   await sb.from("photo_faces").delete().eq("photo_id",photoId);
+   const rows=descriptors.map(d=>({photo_id:photoId,event_id:EVENT_ID,embedding:JSON.stringify(d)}));
+   const {error}=await sb.from("photo_faces").insert(rows);
+   if(error)throw error;
+   return descriptors.length;
+ }catch(e){console.warn("Face indexing failed",e);return 0}
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function escAttr(s){return esc(s)}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeViewer();if($("modal").classList.contains("open")){if(e.key==="ArrowLeft")move(-1);if(e.key==="ArrowRight")move(1)}})
+
+/* ============================================================
+   FIND MY PHOTOS — real face recognition using face-api.js + Supabase pgvector.
+   Guest face embeddings stay in memory only; photo face embeddings are stored
+   server-side in Supabase and matched through a SECURITY DEFINER RPC.
+   ============================================================ */
+function openFaceScan(){goStep('stepConsent');$("faceModal").classList.add('open')}
+function closeFaceScan(){$("faceModal").classList.remove('open');stopCamera()}
+function goStep(id){document.querySelectorAll('.scan-step').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');$("faceModal").classList.remove('scanning');if(id==='stepCapture')startCamera();else stopCamera()}
+async function startCamera(){
+ const video=$("camVideo"),err=$("camError"),btn=$("captureBtn");
+ err.style.display='none';btn.disabled=false;btn.style.opacity='1';
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){err.textContent="Camera isn't supported in this browser.";err.style.display='block';return}
+ try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});video.srcObject=camStream}
+ catch(e){btn.disabled=true;btn.style.opacity='.4';err.textContent=e.name==='NotAllowedError'?"Camera access was blocked. Allow camera permission for this site, then reopen this screen.":e.name==='NotFoundError'?"No camera was found on this device.":"Camera needs HTTPS. Open the live vercel.app URL.";err.style.display='block'}
+}
+function stopCamera(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null}}
+function captureSelfie(){
+ const video=$("camVideo"),canvas=$("camCanvas");
+ canvas.width=video.videoWidth||300;canvas.height=video.videoHeight||300;
+ const ctx=canvas.getContext('2d');ctx.translate(canvas.width,0);ctx.scale(-1,1);ctx.drawImage(video,0,0,canvas.width,canvas.height);
+ $("capturedImg").src=canvas.toDataURL('image/jpeg',.9);
+ goStep('stepScanning');$("faceModal").classList.add('scanning');runFaceMatch();
+}
+async function runFaceMatch(){
+ const status=$("scanStatus");
+ try{
+   status.textContent=t('detectingFace');
+   const blob=await new Promise(r=>$('camCanvas').toBlob(r,'image/jpeg',.9));
+   const descriptors=await extractFaceDescriptors(blob);
+   if(descriptors.length!==1)throw new Error(descriptors.length===0?t('noFaceDetected'):t('captureOneFace'));
+   status.textContent=t('comparingEventPhotos');
+   const {data,error}=await sb.rpc('match_event_faces',{p_event_id:EVENT_ID,p_embedding:JSON.stringify(descriptors[0]),p_threshold:FACE_MATCH_THRESHOLD});
+   if(error)throw error;
+   const rows=data||[],ids=rows.map(x=>String(x.photo_id));
+   matchedIds=new Set(ids);
+   if(!SHOW_ALL_PHOTOS){photos=rows.map(x=>x.photo).filter(Boolean);buildCategories()}
+   $("resultsTitle").textContent=LANG==='en'?`Found you in ${ids.length} photo${ids.length===1?'':'s'}`:t('foundInPhotoTemplate').replace('{n}',ids.length);
+   $("faceModal").classList.remove('scanning');goStep('stepResults');
+ }catch(e){
+   console.error(e);$("faceModal").classList.remove('scanning');status.textContent=e.message||'Face recognition failed.';
+   setTimeout(()=>goStep('stepCapture'),1400);
+ }
+}
+function viewMatches(){closeFaceScan();VISIBLE_COUNT=PAGE_SIZE;$("matchedBanner").classList.remove('hidden');$("count").textContent=matchedIds.size+" "+t("matchedPhotos");render();toast(`${matchedIds.size} ${t("matchedPhotos")}`)}
+function clearMatch(){matchedIds=null;VISIBLE_COUNT=PAGE_SIZE;$("matchedBanner").classList.add('hidden');if(!SHOW_ALL_PHOTOS)load();else render()}
+
+load();
+</script>
+</body>
+</html>
